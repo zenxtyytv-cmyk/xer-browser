@@ -3,6 +3,10 @@ const path = require('path');
 const { isBlocked } = require('./blocklist');
 const claude = require('./claude');
 const store = require('./store');
+const { ElectronBlocker } = require('@ghostery/adblocker-electron');
+const fetch = require('cross-fetch');
+const fsx = require('fs');
+const pathx = require('path');
 
 let bookmarks = [], history = [], sitePerms = {};
 
@@ -97,8 +101,23 @@ function closeTab(id) {
   } else pushTabs();
 }
 
+async function setupAdblock(ses) {
+  try {
+    const cache = pathx.join(app.getPath('userData'), 'adblock-engine.bin');
+    const blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch, {
+      path: cache,
+      read: async (p) => fsx.promises.readFile(p),
+      write: async (p, buf) => fsx.promises.writeFile(p, buf)
+    });
+    blocker.enableBlockingInSession(ses);
+    blocker.on('request-blocked', () => { stats.blocked++; });
+    console.log('[xer] adblock engine ready');
+  } catch (e) { console.log('[xer] adblock engine unavailable, using built-in list:', e.message); }
+}
+
 function setupPrivacy() {
   const ses = session.fromPartition('persist:xer');
+  setupAdblock(ses);
   ses.webRequest.onBeforeRequest((d, cb) => {
     if (isBlocked(d.url)) { stats.blocked++; return cb({ cancel: true }); }
     cb({});
