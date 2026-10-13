@@ -1,7 +1,7 @@
 {
   "name": "xer-browser",
   "productName": "Xer Browser",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Privacy-first Chromium-based browser with built-in Claude assistant",
   "main": "src/main/main.js",
   "scripts": {
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.20.1",
+    "@mozilla/readability": "^0.6.0",
     "cross-fetch": "^4.1.0"
   },
   "build": {

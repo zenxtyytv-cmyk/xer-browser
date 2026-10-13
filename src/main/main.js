@@ -6,6 +6,7 @@ const store = require('./store');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
+const READABILITY_SRC = fsx.readFileSync(require.resolve('@mozilla/readability/Readability.js'), 'utf8');
 const pathx = require('path');
 
 let bookmarks = [], history = [], sitePerms = {};
@@ -162,7 +163,8 @@ function setupIpc() {
   ipcMain.handle('bm:list', () => bookmarks);
   ipcMain.handle('bm:toggle', () => {
     const wc = tabs.get(activeId)?.webContents; if (!wc) return false;
-    const url = wc.getURL(); const i = bookmarks.findIndex(b => b.url === url);
+    const url = wc.getURL(); if (url.startsWith('file:') || url.startsWith('data:')) return false;
+    const i = bookmarks.findIndex(b => b.url === url);
     if (i >= 0) bookmarks.splice(i, 1); else bookmarks.push({ url, title: wc.getTitle() });
     store.save('bookmarks', bookmarks); return i < 0;
   });
@@ -176,6 +178,28 @@ function setupIpc() {
     wc.setZoomLevel(d === 0 ? 0 : wc.getZoomLevel() + d); });
   ipcMain.handle('devtools', () => tabs.get(activeId)?.webContents.toggleDevTools());
   ipcMain.handle('perms:reset', () => { sitePerms = {}; store.save('perms', sitePerms); return true; });
+  ipcMain.handle('reader:open', async () => {
+    const wc = tabs.get(activeId)?.webContents; if (!wc) return { ok: false, error: 'No active tab' };
+    try {
+      const art = await wc.executeJavaScript(`(() => {
+        ${READABILITY_SRC}
+        const doc = document.cloneNode(true);
+        const a = new Readability(doc).parse();
+        return a ? { title: a.title, byline: a.byline, content: a.content } : null;
+      })()`);
+      if (!art) return { ok: false, error: 'No article found on this page' };
+      const esc = (x) => String(x).replace(/</g, '&lt;');
+      const html = `<!doctype html><meta charset="utf-8"><title>${esc(art.title)}</title>
+<style>body{background:#0b0b10;color:#e8e8f0;font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:48px 24px;line-height:1.7}
+h1{font-family:system-ui;line-height:1.2}p.byline{color:#9a9ab0;font-style:italic}
+a{color:#7aa2f7}img{max-width:100%;height:auto}figure{margin:24px 0}
+blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#c0c0d0}</style>
+<h1>${esc(art.title)}</h1>${art.byline ? `<p class="byline">${esc(art.byline)}</p>` : ''}${art.content}
+<div style="border-top:1px solid #34344d;margin-top:48px;padding-top:16px;color:#9a9ab0;font-family:system-ui">Xer Reader — press the back button to return to the original page.</div>`;
+      wc.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+      return { ok: true };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
   ipcMain.handle('claude:hasKey', () => claude.hasKey());
   ipcMain.handle('claude:setKey', (_, k) => { claude.saveKey(k); return true; });
   ipcMain.handle('claude:ask', async (_, { messages, withPage }) => {

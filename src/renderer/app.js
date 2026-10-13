@@ -96,3 +96,6 @@ xer.on('shortcut', (s) => {
 
 // ---- claude quick actions ----
 document.querySelectorAll('#quick button').forEach(b => b.onclick = () => { $('withPage').checked = true; $('prompt').value = b.dataset.q; send(); });
+
+// ---- reader mode ----
+$('readerBtn').onclick = async () => { const r = await xer.readerOpen(); if (!r.ok) { const n = $('note'); alert(r.error); } };

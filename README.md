@@ -9,6 +9,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - Auto-upgrade HTTP to HTTPS, DNT + GPC headers, cross-origin referrer trimming
 - All site permissions (camera, mic, location, notifications) denied by default
 - Claude sidebar (Ctrl+J): chat, optionally reading the current page. API key encrypted via OS keychain.
+- Reader mode (📖 button): distraction-free view of any article, powered by Mozilla Readability
 
 ## Run
 ```
@@ -21,12 +22,15 @@ npm run dist
 ```
 
 ## Roadmap
-Bookmarks, history, per-site permission prompts, reader mode, Claude page actions (summarize, extract, fill forms with approval), extension support.
+Claude page actions with approval (fill forms, etc.), extension support, settings page, downloads manager.
+
+Done: tabs, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions.
 
 ## Testing
 ```
 xvfb-run -a npx electron test/smoke.js --no-sandbox --disable-gpu
 xvfb-run -a node test/e2e.js
+xvfb-run -a npx electron test/reader.js --no-sandbox --disable-gpu
 ```
 
 ## Shortcuts
@@ -35,3 +39,4 @@ Ctrl+T new tab, Ctrl+W close, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R relo
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)
 - [@ghostery/adblocker-electron](https://github.com/ghostery/adblocker) (MPL-2.0) for ad and tracker filtering
+- [@mozilla/readability](https://github.com/mozilla/readability) (Apache-2.0) for reader mode, the same engine as Firefox's reader view

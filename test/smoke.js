@@ -19,6 +19,7 @@ app.whenReady().then(async () => {
   check('quick action buttons exist', (await w.webContents.executeJavaScript('document.querySelectorAll("#quick button").length')) === 4);
   check('find bar exists', (await w.webContents.executeJavaScript('!!document.getElementById("findbar")')));
   check('ipc handler registered', true);
+  check('reader button exists', (await w.webContents.executeJavaScript('!!document.getElementById("readerBtn")')));
   const img = await w.webContents.capturePage();
   require('fs').writeFileSync(path.join(__dirname, 'shot.png'), img.toPNG());
   const failed = results.filter(r => !r[1]).length;
