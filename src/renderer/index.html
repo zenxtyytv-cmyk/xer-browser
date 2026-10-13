@@ -8,16 +8,20 @@
   <div id="toolbar">
     <button id="back">&#8592;</button><button id="fwd">&#8594;</button><button id="reload">&#8635;</button>
     <input id="url" placeholder="Search or enter address" spellcheck="false">
+    <button id="star" title="Bookmark (Ctrl+D)">&#9734;</button><button id="histBtn" title="History (Ctrl+H)">&#8987;</button>
     <span id="shield" title="Trackers blocked">0 blocked</span>
     <button id="claudeBtn" title="Claude (Ctrl+J)">Claude</button>
   </div>
 </div>
+<div id="findbar" hidden><input id="findInput" placeholder="Find in page"><button id="findPrev">&#8593;</button><button id="findNext">&#8595;</button><button id="findClose">&times;</button></div>
+<div id="panel" hidden><div id="panelHead"><b id="panelTitle"></b><span><button id="panelClear">Clear</button> <button id="panelClose">&times;</button></span></div><div id="panelBody"></div></div>
 <aside id="sidebar" hidden>
   <div id="sbHead">Claude <label><input type="checkbox" id="withPage" checked> read page</label></div>
   <div id="keyBox" hidden>
     <p>Paste your Anthropic API key. It's stored encrypted on this device only.</p>
     <input id="keyInput" type="password" placeholder="sk-ant-..."><button id="keySave">Save</button>
   </div>
+  <div id="quick"><button data-q="Summarize this page in 5 bullet points.">Summarize</button><button data-q="Explain this page simply, like I am new to the topic.">Explain</button><button data-q="Extract the key facts, names, dates and numbers from this page as a list.">Extract</button><button data-q="Is there anything misleading, risky or scammy on this page? Be specific.">Safety check</button></div>
   <div id="msgs"></div>
   <div id="inputRow"><textarea id="prompt" rows="2" placeholder="Ask Claude about this page..."></textarea><button id="send">Send</button></div>
 </aside>

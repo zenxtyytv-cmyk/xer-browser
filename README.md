@@ -22,3 +22,12 @@ npm run dist
 
 ## Roadmap
 Bookmarks, history, per-site permission prompts, reader mode, Claude page actions (summarize, extract, fill forms with approval), extension support.
+
+## Testing
+```
+xvfb-run -a npx electron test/smoke.js --no-sandbox --disable-gpu
+xvfb-run -a node test/e2e.js
+```
+
+## Shortcuts
+Ctrl+T new tab, Ctrl+W close, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl +/-/0 zoom, F12 devtools.

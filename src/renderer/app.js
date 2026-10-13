@@ -53,3 +53,46 @@ async function send() {
 }
 $('send').onclick = send;
 $('prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+// ---- bookmarks ----
+$('star').onclick = async () => { const on = await xer.toggleBookmark(); $('star').textContent = on ? '\u2605' : '\u2606'; };
+xer.on('tabs', async ({ tabs, activeId }) => {
+  const t = tabs.find(t => t.id === activeId); if (!t) return;
+  const bms = await xer.bookmarks(); $('star').textContent = bms.some(b => b.url === t.url) ? '\u2605' : '\u2606';
+});
+
+// ---- panel (bookmarks + history) ----
+let panelMode = null;
+async function showPanel(mode) {
+  if (panelMode === mode) { $('panel').hidden = true; panelMode = null; return; }
+  panelMode = mode; $('panel').hidden = false;
+  const list = mode === 'history' ? await xer.history() : await xer.bookmarks();
+  $('panelTitle').textContent = mode === 'history' ? 'History' : 'Bookmarks';
+  $('panelClear').style.display = mode === 'history' ? '' : 'none';
+  $('panelBody').innerHTML = '';
+  if (!list.length) $('panelBody').innerHTML = '<div class="item"><small>Nothing here yet.</small></div>';
+  list.forEach(h => {
+    const d = document.createElement('div'); d.className = 'item';
+    const a = document.createElement('div'); a.textContent = h.title || h.url;
+    const b = document.createElement('small'); b.textContent = h.url;
+    d.append(a, b); d.onclick = () => xer.go(h.url); $('panelBody').append(d);
+  });
+}
+$('histBtn').onclick = () => showPanel('history');
+$('panelClose').onclick = () => { $('panel').hidden = true; panelMode = null; };
+$('panelClear').onclick = async () => { await xer.clearHistory(); panelMode = null; showPanel('history'); };
+
+// ---- find in page ----
+$('findClose').onclick = () => { $('findbar').hidden = true; xer.find(''); };
+$('findInput').addEventListener('input', e => xer.find(e.target.value));
+$('findInput').addEventListener('keydown', e => { if (e.key === 'Enter') xer.find(e.target.value, !e.shiftKey); if (e.key === 'Escape') $('findClose').click(); });
+$('findNext').onclick = () => xer.find($('findInput').value, true);
+$('findPrev').onclick = () => xer.find($('findInput').value, false);
+xer.on('shortcut', (s) => {
+  if (s === 'bookmark') $('star').click();
+  if (s === 'history') $('histBtn').click();
+  if (s === 'find') { $('findbar').hidden = false; $('findInput').focus(); $('findInput').select(); }
+});
+
+// ---- claude quick actions ----
+document.querySelectorAll('#quick button').forEach(b => b.onclick = () => { $('withPage').checked = true; $('prompt').value = b.dataset.q; send(); });

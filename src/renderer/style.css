@@ -29,3 +29,16 @@ button:hover{background:#34344d}
 .m.err{background:#4a1d28}
 #inputRow{display:flex;gap:6px;padding:10px;border-top:1px solid #26263a}
 #prompt{flex:1;resize:none}
+
+#star{font-size:15px}
+#findbar{position:absolute;top:90px;right:16px;z-index:9;background:#1c1c28;border:1px solid #34344d;border-radius:10px;padding:6px;display:flex;gap:4px}
+#findbar[hidden],#panel[hidden]{display:none}
+#findInput{background:#0b0b10;border:1px solid #26263a;color:#fff;border-radius:6px;padding:5px 8px;outline:none}
+#panel{position:absolute;top:84px;left:0;bottom:0;width:340px;z-index:8;background:#14141c;border-right:1px solid #26263a;display:flex;flex-direction:column}
+#panelHead{display:flex;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #26263a}
+#panelBody{overflow-y:auto;flex:1}
+.item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #1c1c28}
+.item:hover{background:#1c1c28}.item small{display:block;color:#9a9ab0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#quick{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid #26263a}
+#quick button{font-size:12px;padding:4px 8px}
