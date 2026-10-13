@@ -3,6 +3,9 @@ const path = require('path');
 const { isBlocked } = require('./blocklist');
 const claude = require('./claude');
 const store = require('./store');
+const network = require('./network');
+const localai = require('./localai');
+const widgets = require('./widgets');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -18,6 +21,7 @@ let bookmarks = [], history = [], sitePerms = {};
   ['no-pings'], ['metrics-recording-only'], ['no-default-browser-check'],
   ['disable-features', 'InterestFeedContentSuggestions,OptimizationHints,Translate,MediaRouter,FederatedLearningOfCohortsAPI,InterestCohortAPI,AttributionReportingCrossAppWeb'],
 ].forEach(([k, v]) => app.commandLine.appendSwitch(k, v));
+app.commandLine.appendSwitch('enable-features', 'DnsOverHttps');
 
 let win;
 const tabs = new Map(); // id -> BrowserView
@@ -57,7 +61,7 @@ function normalize(input) {
 function newTab(url) {
   const id = nextId++;
   const view = new BrowserView({
-    webPreferences: { partition: 'persist:xer', contextIsolation: true, sandbox: true, nodeIntegration: false }
+    webPreferences: { partition: 'persist:xer', contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, 'preload-internal.js') }
   });
   tabs.set(id, view);
   const wc = view.webContents;
@@ -200,17 +204,51 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
       return { ok: true };
     } catch (e) { return { ok: false, error: e.message }; }
   });
+  // Internal-page APIs: only callable from OUR bundled pages (exact file:// path inside src/renderer).
+  // Web pages (including ones with a lookalike URL) are rejected.
+  const RENDERER_DIR = path.resolve(__dirname, '../renderer');
+  const internal = (e) => {
+    try {
+      const u = new URL(e.senderFrame.url);
+      if (u.protocol !== 'file:') return false;
+      const p = path.resolve(decodeURIComponent(u.pathname.replace(/^\/([A-Za-z]:)/, '$1')));
+      return p.startsWith(RENDERER_DIR + path.sep);
+    } catch { return false; }
+  };
+  const guard = (fn) => (e, ...a) => { if (!internal(e)) throw new Error('forbidden'); return fn(...a); };
+  ipcMain.handle('net:status', guard(() => network.status()));
+  ipcMain.handle('net:add', guard((p) => network.addProxy(p)));
+  ipcMain.handle('net:remove', guard((id) => network.removeProxy(id)));
+  ipcMain.handle('net:mode', guard((m, id) => network.setMode(m, id)));
+  ipcMain.handle('net:doh', guard((on) => network.setDoh(on)));
+  ipcMain.handle('net:ip', guard(async () => { try { return { ok: true, ip: await network.exitIp() }; } catch (e) { return { ok: false, error: e.message }; } }));
+  ipcMain.handle('dash:get', guard(() => ({ ...widgets.get(), blocked: stats.blocked, bookmarks })));
+  ipcMain.handle('dash:set', guard((d) => widgets.set(d)));
+  ipcMain.handle('dash:reset', guard(() => widgets.reset()));
+  ipcMain.handle('ai:get', guard(() => localai.get()));
+  ipcMain.handle('ai:set', guard((p) => localai.set(p)));
+  ipcMain.handle('ai:models', guard(async () => { try { return { ok: true, models: await localai.models() }; } catch (e) { return { ok: false, error: 'Ollama not reachable at ' + localai.get().ollamaUrl }; } }));
+  ipcMain.handle('open:settings', () => newTab('file://' + path.join(__dirname, '../renderer/settings.html')));
   ipcMain.handle('claude:hasKey', () => claude.hasKey());
   ipcMain.handle('claude:setKey', (_, k) => { claude.saveKey(k); return true; });
   ipcMain.handle('claude:ask', async (_, { messages, withPage }) => {
-    try { return { ok: true, text: await claude.ask({ messages, pageContext: withPage ? await pageContext() : null }) }; }
+    try {
+      const pc = withPage ? await pageContext() : null;
+      if (localai.get().provider === 'local') {
+        const system = 'You are the assistant of Xer Browser. Be concise.' + (pc ? `\n\nPage: ${pc.title} (${pc.url})\n${pc.text}` : '');
+        return { ok: true, text: await localai.ask({ messages, system }) };
+      }
+      return { ok: true, text: await claude.ask({ messages, pageContext: pc }) };
+    }
     catch (e) { return { ok: false, error: e.message }; }
   });
 }
 
 app.whenReady().then(() => {
   bookmarks = store.load('bookmarks', []); history = store.load('history', []); sitePerms = store.load('perms', {});
+  widgets.init(); localai.init();
   setupPrivacy(); setupIpc();
+  network.init().catch(e => console.log('[xer] network init', e.message));
   win = new BrowserWindow({
     width: 1280, height: 820, title: 'Xer Browser', backgroundColor: '#0b0b10',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: false }
@@ -236,5 +274,9 @@ app.whenReady().then(() => {
       if (i.key === 'j') { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
     }
   });
+});
+app.on('login', (e, wc, req, authInfo, cb) => {
+  const c = network.credsFor(authInfo);
+  if (c) { e.preventDefault(); cb(c.username, c.password); }
 });
 app.on('window-all-closed', () => app.quit());

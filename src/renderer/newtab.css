@@ -1,0 +1,30 @@
+:root{--accent:#7c5cff;--bg:#0b0b10;--card:#14141c;--text:#e8e8f0;--radius:14px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg) center/cover fixed;color:var(--text);font-family:system-ui,sans-serif}
+#bar{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px}
+button{background:color-mix(in srgb,var(--card) 80%,white 8%);color:var(--text);border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{background:var(--accent)}
+#addbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:var(--card);margin:0 16px 12px;border-radius:var(--radius)}
+#addbar[hidden]{display:none}.sp{flex:1}
+label{font-size:12px;opacity:.85;display:flex;align-items:center;gap:6px}
+input{background:var(--bg);color:var(--text);border:1px solid #2a2a40;border-radius:8px;padding:6px 8px;outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;padding:8px 16px 40px;max-width:1200px;margin:0 auto}
+.w{background:var(--card);border-radius:var(--radius);padding:16px;position:relative;min-height:110px;grid-column:span 2;overflow:hidden}
+.w.s{grid-column:span 1}.w.m{grid-column:span 2}.w.l{grid-column:span 4}.w.xl{grid-column:span 6}
+.w h4{margin:0 0 10px;font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.6}
+.tools{position:absolute;top:6px;right:6px;display:none;gap:4px}
+body.edit .tools{display:flex}body.edit .w{outline:1px dashed var(--accent)}
+.tools button{padding:2px 7px;font-size:12px}
+.clock .time{font-size:44px;font-weight:600}.clock .date{opacity:.6}
+.search input{width:100%;padding:14px 18px;font-size:16px;border-radius:30px}
+.logo{font-size:30px;letter-spacing:6px;font-weight:700;color:var(--accent);margin-bottom:10px}
+.links{display:flex;flex-wrap:wrap;gap:10px}.links a{background:var(--bg);padding:10px 14px;border-radius:10px;color:var(--text);text-decoration:none}
+.links a:hover{background:var(--accent)}
+textarea{width:100%;min-height:90px;background:var(--bg);color:var(--text);border:1px solid #2a2a40;border-radius:8px;padding:8px;resize:vertical;outline:none;font:inherit}
+.todo li{list-style:none;padding:4px 0;display:flex;gap:8px;align-items:center}.todo ul{padding:0;margin:8px 0}
+.todo .done span{text-decoration:line-through;opacity:.5}
+.big{font-size:34px;font-weight:700;color:var(--accent)}
+.calc input{width:100%;margin-bottom:6px}.calc .res{font-size:22px}
+.list a{display:block;padding:6px 0;color:var(--text);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list a:hover{color:var(--accent)}

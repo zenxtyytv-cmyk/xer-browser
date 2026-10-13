@@ -99,3 +99,4 @@ document.querySelectorAll('#quick button').forEach(b => b.onclick = () => { $('w
 
 // ---- reader mode ----
 $('readerBtn').onclick = async () => { const r = await xer.readerOpen(); if (!r.ok) { const n = $('note'); alert(r.error); } };
+$('gear').onclick = () => xer.openSettings();

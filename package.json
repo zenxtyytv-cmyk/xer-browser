@@ -11,7 +11,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^39.8.10",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.0.0",
+    "ws": "^8.22.0"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.20.1",

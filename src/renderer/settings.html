@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Settings</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<link rel="stylesheet" href="newtab.css">
+<style>main{max-width:760px;margin:0 auto;padding:20px;display:block}section.w{grid-column:auto;margin-bottom:14px}
+select,input{width:100%;margin:4px 0 8px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.row button{flex:0 0 auto}
+.px{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2a40}
+.px.on{color:var(--accent)}small{opacity:.65;display:block;margin-bottom:8px}.ok{color:#7cf0b0}.bad{color:#ff7c8a}</style></head>
+<body><div id="bar"><button onclick="location.href='newtab.html'">&larr; Dashboard</button></div>
+<main>
+<h2>Settings</h2>
+
+<section class="w"><h4>Proxy / VPN</h4>
+<small>Route all browser traffic through a SOCKS5 or HTTP proxy. Works with VPN providers that offer proxy endpoints (Mullvad, Proton, NordVPN, etc.), a local Tor daemon (socks5://127.0.0.1:9050), or a WireGuard/OpenVPN client exposing a local SOCKS port. Xer does not operate VPN servers itself.</small>
+<div class="row"><select id="mode"><option value="direct">Direct (no proxy)</option><option value="proxy">Use selected proxy</option><option value="system">System proxy</option></select></div>
+<div id="plist"></div>
+<div class="row"><input id="pn" placeholder="Name (e.g. Mullvad)"><input id="pu" placeholder="socks5://host:port"></div>
+<div class="row"><input id="pus" placeholder="Username (optional)"><input id="ppw" type="password" placeholder="Password (optional)"><button id="padd">Add</button></div>
+<div class="row"><button id="ipbtn">Check my exit IP</button><span id="ipout"></span></div>
+<div id="perr" class="bad"></div></section>
+
+<section class="w"><h4>DNS &amp; ad blocking</h4>
+<label><input type="checkbox" id="doh" style="width:auto"> Encrypted DNS (DNS-over-HTTPS)</label>
+<small>Ad and tracker blocking is always on (Ghostery engine with EasyList and EasyPrivacy).</small></section>
+
+<section class="w"><h4>AI assistant</h4>
+<label>Provider<select id="prov"><option value="claude">Claude (Anthropic API key)</option><option value="local">Local model (Ollama, runs on your device)</option></select></label>
+<div id="localbox">
+<label>Ollama URL<input id="ourl"></label>
+<div class="row"><select id="omodel"></select><button id="orefresh">Refresh models</button></div>
+<small>Install <a href="https://ollama.com" style="color:var(--accent)">Ollama</a>, then run <code>ollama pull llama3.2</code> (or any model you like). Nothing leaves your machine.</small></div>
+<div id="aistatus"></div></section>
+</main>
+<script src="settings.js"></script></body></html>

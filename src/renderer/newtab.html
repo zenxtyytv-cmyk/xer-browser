@@ -1,7 +1,21 @@
 <!doctype html><html><head><meta charset="utf-8"><title>New Tab</title>
-<style>body{margin:0;height:100vh;display:grid;place-items:center;background:#0b0b10;color:#e8e8f0;font-family:system-ui,sans-serif}
-.w{text-align:center}h1{font-size:56px;letter-spacing:6px;margin:0 0 8px;background:linear-gradient(90deg,#7c5cff,#7cf0b0);-webkit-background-clip:text;color:transparent}
-p{color:#9a9ab0}form{margin-top:28px}input{width:480px;padding:14px 20px;border-radius:28px;border:1px solid #26263a;background:#14141c;color:#fff;font-size:16px;outline:none}
-input:focus{border-color:#7c5cff}</style></head>
-<body><div class="w"><h1>XER</h1><p>Private by default. Claude built in (Ctrl+J).</p>
-<form action="https://duckduckgo.com/" method="get"><input name="q" placeholder="Search privately..." autofocus></form></div></body></html>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' https: data:; form-action https://duckduckgo.com">
+<link rel="stylesheet" href="newtab.css"></head>
+<body>
+<div id="bar"><span id="edit-hint"></span>
+  <button id="editBtn">Customize</button><button id="setBtn">Settings</button></div>
+<div id="addbar" hidden>
+  <b>Add widget:</b>
+  <button data-add="clock">Clock</button><button data-add="search">Search</button><button data-add="quicklinks">Quick links</button>
+  <button data-add="notes">Notes</button><button data-add="todo">To-do</button><button data-add="stats">Privacy stats</button>
+  <button data-add="bookmarks">Bookmarks</button><button data-add="pomodoro">Pomodoro</button><button data-add="calc">Calculator</button>
+  <span class="sp"></span>
+  <label>Accent <input type="color" id="cAccent"></label><label>Background <input type="color" id="cBg"></label>
+  <label>Cards <input type="color" id="cCard"></label><label>Corners <input type="range" id="cRad" min="0" max="28"></label>
+  <label>Wallpaper URL <input id="cWall" placeholder="https://..." size="22"></label>
+  <button id="resetBtn">Reset</button>
+</div>
+<main id="grid"></main>
+<script src="calc.js"></script>
+<script src="newtab.js"></script>
+</body></html>
