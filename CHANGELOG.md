@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- First GitHub Release (v0.4.0): Windows 64-bit portable zip.
 - Windows install guide in README (installer, portable, from source).
 - GitHub Actions workflow template (docs/build-windows.yml.txt) builds the Windows .exe installer and portable app.
 - App icon.

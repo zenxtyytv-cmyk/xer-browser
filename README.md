@@ -16,13 +16,14 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 
 ## Install on Windows
 
-### Option A: Download the installer (easiest)
-1. Go to the [Releases page](../../releases) and download the latest `Xer-Browser-x.y.z-x64.exe`.
-   - The file with `portable` in the name needs no install: just double-click it.
-2. Double-click the `.exe`. If Windows SmartScreen says "Windows protected your PC", click **More info**, then **Run anyway** (the installer is not code-signed yet).
-3. Choose an install folder, finish the wizard, then open **Xer Browser** from the Start menu or desktop shortcut.
+### Option A: Download the portable app (easiest)
+1. Go to the [latest release](https://github.com/zenxtyytv-cmyk/xer-browser/releases/latest) and download `Xer-Browser-x.y.z-win-x64-portable.zip`.
+2. Right-click the zip, choose **Extract All**, and extract it to a folder (do not run it from inside the zip).
+3. Open the folder and double-click **Xer Browser.exe**. If Windows SmartScreen says "Windows protected your PC", click **More info**, then **Run anyway** (the app is not code-signed yet).
 
-No release yet? You can have GitHub build the installer for you:
+This build has not been tested on a real Windows machine yet. If something breaks, please open an Issue.
+
+An `.exe` installer with Start menu shortcuts is also possible. To have GitHub build that installer for you:
 1. In your copy of the repo, click **Add file > Create new file**, name it `.github/workflows/build-windows.yml`, and paste the contents of [`docs/build-windows.yml.txt`](docs/build-windows.yml.txt). Commit it.
 2. Open the **Actions** tab, choose **Build Windows installer**, click **Run workflow**, and download the `xer-browser-windows` artifact when it finishes. (Pushing a tag like `v0.4.0` also publishes it as a Release.)
 
