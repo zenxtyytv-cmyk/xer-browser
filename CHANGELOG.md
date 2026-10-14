@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- Windows install guide in README (installer, portable, from source).
+- GitHub Actions workflow template (docs/build-windows.yml.txt) builds the Windows .exe installer and portable app.
+- App icon.
+
 ## 0.4.0
 - Reader mode (📖 toolbar button): clean, distraction-free article view using Mozilla Readability (Apache-2.0), same engine as Firefox.
 - Fixed: internal new-tab/error pages can no longer be bookmarked.
