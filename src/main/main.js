@@ -32,6 +32,13 @@ const TOOLBAR_H = 84;
 const SIDEBAR_W = 360;
 const stats = { blocked: 0 };
 
+// v0.5: pinned tabs, per-tab favicons, closed-tab stack (Ctrl+Shift+T), downloads
+const pinnedTabs = new Set();
+const favicons = new Map(); // id -> favicon url
+const closedStack = []; // [{url, title}] most-recent-last
+const downloads = new Map(); // id -> {id, name, url, state, total, received, path}
+let nextDlId = 1;
+
 function layout() {
   if (!win) return;
   const [w, h] = win.getContentSize();
@@ -44,9 +51,19 @@ function pushTabs() {
   win.webContents.send('tabs', {
     activeId,
     tabs: [...tabs.entries()].map(([id, v]) => ({
-      id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL()
+      id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL(),
+      pinned: pinnedTabs.has(id), favicon: favicons.get(id) || '',
+      loading: v.webContents.isLoading()
     })),
     blocked: stats.blocked
+  });
+}
+
+function pushDownloads() {
+  if (!win) return;
+  win.webContents.send('downloads', {
+    items: [...downloads.values()].sort((a, b) => b.id - a.id).slice(0, 50),
+    active: [...downloads.values()].some(d => d.state === 'progressing')
   });
 }
 
@@ -68,6 +85,10 @@ function newTab(url) {
   wc.setWindowOpenHandler(({ url }) => { newTab(url); return { action: 'deny' }; });
   ['page-title-updated', 'did-navigate', 'did-navigate-in-page', 'did-start-loading', 'did-stop-loading']
     .forEach(e => wc.on(e, pushTabs));
+  // v0.5: favicon capture
+  wc.on('page-favicon-updated', (_, urls) => {
+    if (urls && urls.length) { favicons.set(id, urls[0]); pushTabs(); }
+  });
   // Auto-upgrade http -> https
   wc.on('did-navigate', (_, u) => {
     if (u.startsWith('file:')) return;
@@ -98,12 +119,48 @@ function switchTab(id) {
 
 function closeTab(id) {
   const v = tabs.get(id); if (!v) return;
+  // v0.5: remember closed tab for Ctrl+Shift+T (skip internal pages)
+  try {
+    const u = v.webContents.getURL();
+    if (/^https?:/.test(u)) {
+      closedStack.push({ url: u, title: v.webContents.getTitle() });
+      if (closedStack.length > 25) closedStack.shift();
+    }
+  } catch {}
   win.removeBrowserView(v); v.webContents.destroy(); tabs.delete(id);
+  pinnedTabs.delete(id); favicons.delete(id);
   if (activeId === id) {
     activeId = null;
     const next = [...tabs.keys()].pop();
     next ? switchTab(next) : newTab();
   } else pushTabs();
+}
+
+function reopenClosedTab() {
+  while (closedStack.length) {
+    const t = closedStack.pop();
+    if (t.url && /^https?:/.test(t.url)) { newTab(t.url); return true; }
+  }
+  return false;
+}
+
+function duplicateTab(id) {
+  const v = tabs.get(id); if (!v) return;
+  try { newTab(v.webContents.getURL()); } catch {}
+}
+
+// v0.5: session restore (Firefox-style) — save open web tabs on quit, reopen on start
+function saveSession() {
+  const urls = [...tabs.values()].map(v => { try { return v.webContents.getURL(); } catch { return ''; } })
+    .filter(u => /^https?:/.test(u));
+  store.save('session', urls.slice(0, 40));
+}
+
+function restoreSession() {
+  const urls = store.load('session', []);
+  if (!Array.isArray(urls) || !urls.length) return false;
+  urls.filter(u => /^https?:/.test(u)).slice(0, 40).forEach(u => newTab(u));
+  return true;
 }
 
 async function setupAdblock(ses) {
@@ -145,6 +202,27 @@ function setupPrivacy() {
       .then(r => { const ok = r.response === 0; if (r.checkboxChecked) { sitePerms[key] = ok; store.save('perms', sitePerms); } cb(ok); });
   });
   ses.setSpellCheckerEnabled(false);
+
+  // v0.5: downloads manager — track everything in one place
+  ses.on('will-download', (_, item) => {
+    const id = nextDlId++;
+    const rec = { id, name: item.getFilename(), url: item.getURL(), state: 'progressing', total: 0, received: 0, path: '' };
+    downloads.set(id, rec);
+    item.on('updated', (_, st) => {
+      rec.state = st; rec.received = item.getReceivedBytes(); rec.total = item.getTotalBytes();
+      rec.path = item.getSavePath() || rec.path;
+      pushDownloads();
+    });
+    item.once('done', (_, st) => {
+      rec.state = st; rec.received = item.getReceivedBytes(); rec.total = item.getTotalBytes();
+      rec.path = item.getSavePath() || rec.path;
+      pushDownloads();
+    });
+    pushDownloads();
+    // Keep the map from growing forever
+    const done = [...downloads.values()].filter(d => d.state !== 'progressing');
+    if (done.length > 100) done.slice(0, done.length - 100).forEach(d => downloads.delete(d.id));
+  });
 }
 
 async function pageContext() {
@@ -155,14 +233,43 @@ async function pageContext() {
   return { title: wc.getTitle(), url: wc.getURL(), text: text.slice(0, 12000) };
 }
 
+// v0.5: awesomebar — on-device suggestions from history + bookmarks (never uploaded)
+function suggest(q) {
+  q = (q || '').trim().toLowerCase();
+  if (!q) return [];
+  const out = [], seen = new Set();
+  const push = (title, url, src) => {
+    if (!url || seen.has(url) || !/^https?:/.test(url)) return;
+    seen.add(url); out.push({ title: title || url, url, src });
+  };
+  history.slice(0, 500).forEach(h => {
+    if (out.length >= 6) return;
+    if ((h.title || '').toLowerCase().includes(q) || h.url.toLowerCase().includes(q)) push(h.title, h.url, 'history');
+  });
+  bookmarks.forEach(b => {
+    if (out.length >= 8) return;
+    if ((b.title || '').toLowerCase().includes(q) || b.url.toLowerCase().includes(q)) push(b.title, b.url, 'bookmark');
+  });
+  return out.slice(0, 8);
+}
+
 function setupIpc() {
   ipcMain.handle('tab:new', (_, url) => newTab(url));
   ipcMain.handle('tab:switch', (_, id) => switchTab(id));
   ipcMain.handle('tab:close', (_, id) => closeTab(id));
+  ipcMain.handle('tab:reopen', () => reopenClosedTab());
+  ipcMain.handle('tab:duplicate', (_, id) => duplicateTab(id));
+  ipcMain.handle('tab:pin', (_, id) => {
+    if (!tabs.has(id)) return false;
+    pinnedTabs.has(id) ? pinnedTabs.delete(id) : pinnedTabs.add(id);
+    pushTabs();
+    return pinnedTabs.has(id);
+  });
   ipcMain.handle('nav:go', (_, url) => tabs.get(activeId)?.webContents.loadURL(normalize(url)));
   ipcMain.handle('nav:back', () => tabs.get(activeId)?.webContents.goBack());
   ipcMain.handle('nav:forward', () => tabs.get(activeId)?.webContents.goForward());
   ipcMain.handle('nav:reload', () => tabs.get(activeId)?.webContents.reload());
+  ipcMain.handle('nav:suggest', (_, q) => suggest(q));
   ipcMain.handle('sidebar:toggle', () => { sidebarOpen = !sidebarOpen; layout(); return sidebarOpen; });
   ipcMain.handle('bm:list', () => bookmarks);
   ipcMain.handle('bm:toggle', () => {
@@ -182,6 +289,11 @@ function setupIpc() {
     wc.setZoomLevel(d === 0 ? 0 : wc.getZoomLevel() + d); });
   ipcMain.handle('devtools', () => tabs.get(activeId)?.webContents.toggleDevTools());
   ipcMain.handle('perms:reset', () => { sitePerms = {}; store.save('perms', sitePerms); return true; });
+  // v0.5: downloads API
+  ipcMain.handle('dl:list', () => [...downloads.values()].sort((a, b) => b.id - a.id).slice(0, 50));
+  ipcMain.handle('dl:open', (_, id) => { const d = downloads.get(id); if (d && d.path && d.state === 'completed') shell.openPath(d.path); });
+  ipcMain.handle('dl:show', (_, id) => { const d = downloads.get(id); if (d && d.path) shell.showItemInFolder(d.path); });
+  ipcMain.handle('dl:clear', () => { [...downloads.values()].forEach(d => { if (d.state !== 'progressing') downloads.delete(d.id); }); pushDownloads(); return true; });
   ipcMain.handle('reader:open', async () => {
     const wc = tabs.get(activeId)?.webContents; if (!wc) return { ok: false, error: 'No active tab' };
     try {
@@ -256,12 +368,13 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   win.loadFile(path.join(__dirname, '../renderer/index.html'));
   win.on('resize', layout);
-  win.webContents.once('did-finish-load', () => newTab());
+  // v0.5: restore last session's tabs (if any), else open a fresh new-tab page
+  win.webContents.once('did-finish-load', () => { if (!restoreSession()) newTab(); });
   win.webContents.on('before-input-event', (e, i) => {
     if (i.key === 'F12' && i.type === 'keyDown') tabs.get(activeId)?.webContents.toggleDevTools();
     if (i.control && i.type === 'keyDown') {
-      if (i.key === 't') { newTab(); e.preventDefault(); }
-      if (i.key === 'w') { closeTab(activeId); e.preventDefault(); }
+      if (i.key === 't' && !i.shift) { newTab(); e.preventDefault(); }
+      if (i.key === 'w' && !i.shift) { closeTab(activeId); e.preventDefault(); }
       if (i.key === 'l') { win.webContents.send('focus-url'); e.preventDefault(); }
       if (i.key === 'r') { tabs.get(activeId)?.webContents.reload(); e.preventDefault(); }
       if (i.key === 'd') { win.webContents.send('shortcut', 'bookmark'); e.preventDefault(); }
@@ -271,7 +384,10 @@ app.whenReady().then(() => {
       if (i.key === '-') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() - 0.5); e.preventDefault(); }
       if (i.key === '0') { tabs.get(activeId)?.webContents.setZoomLevel(0); e.preventDefault(); }
       if (i.key === 'Tab') { const ids = [...tabs.keys()]; switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
-      if (i.key === 'j') { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
+      if (i.key === 'j' && !i.shift) { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
+      // v0.5 shortcuts
+      if (i.key === 'T' && i.shift) { reopenClosedTab(); e.preventDefault(); } // Ctrl+Shift+T
+      if (i.key === 'J' && i.shift) { win.webContents.send('shortcut', 'downloads'); e.preventDefault(); } // Ctrl+Shift+J
     }
   });
 });
@@ -279,4 +395,6 @@ app.on('login', (e, wc, req, authInfo, cb) => {
   const c = network.credsFor(authInfo);
   if (c) { e.preventDefault(); cb(c.username, c.password); }
 });
-app.on('window-all-closed', () => app.quit());
+// v0.5: persist session before quit
+app.on('before-quit', saveSession);
+app.on('window-all-closed', () => { saveSession(); app.quit(); });

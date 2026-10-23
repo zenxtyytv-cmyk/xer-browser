@@ -1,10 +1,14 @@
 *{box-sizing:border-box;margin:0}
 body{background:#0b0b10;color:#e8e8f0;font:13px system-ui,sans-serif;overflow:hidden;height:100vh;position:relative}
-#chrome{height:84px;background:#14141c;border-bottom:1px solid #26263a}
+#chrome{height:84px;background:#14141c;border-bottom:1px solid #26263a;position:relative}
 #tabbar{display:flex;height:38px;align-items:flex-end;padding:0 8px;gap:4px}
 #tabs{display:flex;gap:2px;overflow:hidden}
-.tab{display:flex;align-items:center;gap:8px;width:180px;height:30px;padding:0 10px;background:#1c1c28;border-radius:8px 8px 0 0;cursor:pointer;color:#9a9ab0}
+.tab{display:flex;align-items:center;gap:8px;width:180px;height:30px;padding:0 10px;background:#1c1c28;border-radius:8px 8px 0 0;cursor:pointer;color:#9a9ab0;flex:none}
 .tab.active{background:#262638;color:#fff}
+.tab.pinned{width:40px;justify-content:center;padding:0}
+.tab.pinned span,.tab.pinned b{display:none}
+.tab.loading .fav{opacity:.4}
+.tab .fav{width:14px;height:14px;border-radius:3px;flex:none}
 .tab span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tab b{font-weight:400;opacity:.6}.tab b:hover{opacity:1}
 button{background:#262638;color:#e8e8f0;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
@@ -15,6 +19,8 @@ button:hover{background:#34344d}
 #url:focus{border-color:#7c5cff}
 #shield{color:#7cf0b0;font-size:12px;padding:0 6px}
 #claudeBtn{background:#7c5cff}
+#dlBtn{position:relative}
+#dlBadge{position:absolute;top:-4px;right:-4px;background:#7c5cff;border-radius:8px;font-size:10px;padding:1px 5px;font-style:normal}
 #sidebar{position:absolute;top:84px;right:0;bottom:0;width:360px;background:#14141c;border-left:1px solid #26263a;display:flex;flex-direction:column}
 #sidebar[hidden]{display:none}
 #sbHead{padding:10px 12px;font-weight:600;display:flex;justify-content:space-between;border-bottom:1px solid #26263a}
@@ -40,5 +46,24 @@ button:hover{background:#34344d}
 .item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #1c1c28}
 .item:hover{background:#1c1c28}.item small{display:block;color:#9a9ab0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:3px;background:#26263a;border-radius:2px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:#7c5cff;transition:width .3s}
+.rowacts{display:flex;gap:6px;margin-top:6px}
+.rowacts button{font-size:11px;padding:2px 8px}
 #quick{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid #26263a}
 #quick button{font-size:12px;padding:4px 8px}
+
+/* v0.5: awesomebar suggestions */
+#suggest{position:absolute;top:80px;left:8px;right:8px;z-index:20;background:#1c1c28;border:1px solid #34344d;border-radius:10px;max-height:320px;overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#suggest[hidden]{display:none}
+.sug{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer}
+.sug.sel,.sug:hover{background:#26263a}
+.sug span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sug small{color:#9a9ab0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sug b{font-size:10px;font-weight:600;color:#7c5cff;background:#26263a;border-radius:4px;padding:1px 5px;text-transform:uppercase}
+
+/* v0.5: tab context menu */
+#tabmenu{position:fixed;z-index:30;background:#1c1c28;border:1px solid #34344d;border-radius:10px;padding:4px;display:flex;flex-direction:column;min-width:200px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#tabmenu[hidden]{display:none}
+#tabmenu button{background:none;text-align:left;border-radius:6px;padding:7px 12px;font-size:12px}
+#tabmenu button:hover{background:#34344d}
