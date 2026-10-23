@@ -7,6 +7,11 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.
 - **Local AI**: use Ollama models on-device instead of Claude (Settings > AI assistant).
 - Tabs, URL/search bar (DuckDuckGo default), keyboard shortcuts (Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+J)
+- **Pinned tabs** (right-click a tab) with per-tab favicons; right-click menu also gives Reload / Duplicate / Close / Reopen closed tab.
+- **Reopen closed tab** (Ctrl+Shift+T) — a 25-deep memory of closed web tabs.
+- **Session restore**: your open web tabs come back on the next launch.
+- **Downloads manager** (Ctrl+Shift+J or the ⬇ toolbar button): live progress, Open / Show in folder, clear finished.
+- **Awesomebar suggestions**: as you type in the address bar, Xer suggests matches from your local history and bookmarks. Computed on-device; nothing is uploaded.
 - Built-in ad/tracker blocking with a live counter
 - Removed Chromium/Google extras: sync, telemetry, crash reporting, auto-update pings, Translate, FLoC/Topics, Media Router, X-Client-Data header
 - Auto-upgrade HTTP to HTTPS, DNT + GPC headers, cross-origin referrer trimming
@@ -25,7 +30,7 @@ This build has not been tested on a real Windows machine yet. If something break
 
 An `.exe` installer with Start menu shortcuts is also possible. To have GitHub build that installer for you:
 1. In your copy of the repo, click **Add file > Create new file**, name it `.github/workflows/build-windows.yml`, and paste the contents of [`docs/build-windows.yml.txt`](docs/build-windows.yml.txt). Commit it.
-2. Open the **Actions** tab, choose **Build Windows installer**, click **Run workflow**, and download the `xer-browser-windows` artifact when it finishes. (Pushing a tag like `v0.4.0` also publishes it as a Release.)
+2. Open the **Actions** tab, choose **Build Windows installer**, click **Run workflow**, and download the `xer-browser-windows` artifact when it finishes. (Pushing a tag like `v0.5.0` also publishes it as a Release.)
 
 ### Option B: Run from source
 1. Install [Node.js](https://nodejs.org) 20 or newer (LTS) and [Git](https://git-scm.com/download/win).
@@ -66,9 +71,9 @@ npm run dist
 ```
 
 ## Roadmap
-Claude page actions with approval (fill forms, etc.), extension support, settings page, downloads manager.
+Claude page actions with approval (fill forms, etc.), extension support, settings page.
 
-Done: tabs, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions.
+Done: tabs, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, downloads manager, session restore, pinned tabs, address-bar suggestions.
 
 ## Testing
 ```
@@ -80,10 +85,11 @@ xvfb-run -a node test/security.js
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl +/-/0 zoom, F12 devtools.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)
 - [Ollama](https://github.com/ollama/ollama) (MIT), optional local model backend
 - [@ghostery/adblocker-electron](https://github.com/ghostery/adblocker) (MPL-2.0) for ad and tracker filtering
 - [@mozilla/readability](https://github.com/mozilla/readability) (Apache-2.0) for reader mode, the same engine as Firefox's reader view
+- UX inspiration from [Zen Browser](https://github.com/zen-browser/desktop), Firefox's awesomebar, and Brave's glanceable privacy UI

@@ -1,10 +1,14 @@
 # Changelog
 
-## Unreleased
-- First GitHub Release (v0.4.0): Windows 64-bit portable zip.
-- Windows install guide in README (installer, portable, from source).
-- GitHub Actions workflow template (docs/build-windows.yml.txt) builds the Windows .exe installer and portable app.
-- App icon.
+## 0.5.0
+- Downloads manager (Ctrl+Shift+J or the ⬇ toolbar button): live progress bar, Open / Show in folder, clear finished downloads, live badge while downloading.
+- Session restore: open web tabs are saved on quit and restored on the next launch (Firefox-style).
+- Reopen closed tab: Ctrl+Shift+T or the tab context menu; keeps the last 25 closed web tabs.
+- Pinned tabs and per-tab favicons; right-click tab menu (Reload / Duplicate / Pin / Close / Reopen closed).
+- Awesomebar: address-bar suggestions from local history and bookmarks, computed on-device (privacy-preserving, Firefox-style).
+- Middle-click closes a tab; tabs show a loading state.
+- Shortcuts: Ctrl+Shift+T (reopen), Ctrl+Shift+J (downloads).
+- Open-source inspiration: Zen Browser (glanceable tab UI), Firefox (awesomebar, session restore), Brave (privacy-first defaults).
 
 ## 0.4.0
 - Reader mode (📖 toolbar button): clean, distraction-free article view using Mozilla Readability (Apache-2.0), same engine as Firefox.
@@ -17,6 +21,10 @@
 - Settings page. Safe calculator parser (no eval).
 - Internal-page API is only exposed to our bundled pages (exact path check), never to websites. Verified by test/security.js.
 - New feature tests, including a real proxy-routing test.
+- First GitHub Release (v0.4.0): Windows 64-bit portable zip.
+- Windows install guide in README (installer, portable, from source).
+- GitHub Actions workflow template (docs/build-windows.yml.txt) builds the Windows .exe installer and portable app.
+- App icon.
 
 ## 0.3.0
 - Upgraded to Electron 39 (Chromium 142).
