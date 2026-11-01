@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('xer', {
   go: inv('nav:go'), back: inv('nav:back'), forward: inv('nav:forward'), reload: inv('nav:reload'),
   toggleSidebar: inv('sidebar:toggle'),
   bookmarks: inv('bm:list'), toggleBookmark: inv('bm:toggle'), history: inv('hist:list'), clearHistory: inv('hist:clear'),
+  downloads: inv('dl:list'), clearDownloads: inv('dl:clear'), openDownload: inv('dl:open'), showDownload: inv('dl:show'), cancelDownload: inv('dl:cancel'),
   find: inv('find'), zoom: inv('zoom'), devtools: inv('devtools'), resetPerms: inv('perms:reset'),
   readerOpen: inv('reader:open'),
   openSettings: inv('open:settings'), ai: { get: inv('ai:get'), set: inv('ai:set'), models: inv('ai:models') },

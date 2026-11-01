@@ -1,7 +1,9 @@
 # Changelog
 
 ## Unreleased
-- First GitHub Release (v0.4.0): Windows 64-bit portable zip.
+- Downloads manager (⬇ button): downloads auto-save to your Downloads folder with live progress, cancel, open, and show-in-folder; the list persists across restarts. Built on Electron's native download APIs.
+- Fixed: internal pages (reader mode, error pages) no longer appear in history.
+- New downloads test (real HTTP download, uniquified filenames, cancel flow).
 - Windows install guide in README (installer, portable, from source).
 - GitHub Actions workflow template (docs/build-windows.yml.txt) builds the Windows .exe installer and portable app.
 - App icon.

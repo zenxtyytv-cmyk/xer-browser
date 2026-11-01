@@ -20,6 +20,8 @@ app.whenReady().then(async () => {
   check('find bar exists', (await w.webContents.executeJavaScript('!!document.getElementById("findbar")')));
   check('ipc handler registered', true);
   check('reader button exists', (await w.webContents.executeJavaScript('!!document.getElementById("readerBtn")')));
+  check('downloads button exists', (await w.webContents.executeJavaScript('!!document.getElementById("dlBtn")')));
+  check('downloads api exposed', (await w.webContents.executeJavaScript('typeof window.xer?.downloads')) === 'function');
   const img = await w.webContents.capturePage();
   require('fs').writeFileSync(path.join(__dirname, 'shot.png'), img.toPNG());
   const failed = results.filter(r => !r[1]).length;

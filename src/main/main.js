@@ -6,6 +6,7 @@ const store = require('./store');
 const network = require('./network');
 const localai = require('./localai');
 const widgets = require('./widgets');
+const downloads = require('./downloads');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -70,7 +71,7 @@ function newTab(url) {
     .forEach(e => wc.on(e, pushTabs));
   // Auto-upgrade http -> https
   wc.on('did-navigate', (_, u) => {
-    if (u.startsWith('file:')) return;
+    if (!/^https?:/i.test(u)) return; // only real web pages, not reader/error/data pages
     history.unshift({ url: u, title: wc.getTitle(), t: Date.now() });
     history = history.slice(0, 2000); store.save('history', history);
   });
@@ -123,6 +124,9 @@ async function setupAdblock(ses) {
 function setupPrivacy() {
   const ses = session.fromPartition('persist:xer');
   setupAdblock(ses);
+  downloads.attach(ses,
+    list => { if (win && !win.isDestroyed()) win.webContents.send('downloads', list); },
+    list => store.save('downloads', list));
   ses.webRequest.onBeforeRequest((d, cb) => {
     if (isBlocked(d.url)) { stats.blocked++; return cb({ cancel: true }); }
     cb({});
@@ -174,6 +178,11 @@ function setupIpc() {
   });
   ipcMain.handle('hist:list', () => history.slice(0, 200));
   ipcMain.handle('hist:clear', () => { history = []; store.save('history', history); return true; });
+  ipcMain.handle('dl:list', () => downloads.list());
+  ipcMain.handle('dl:clear', () => { downloads.clear(); return true; });
+  ipcMain.handle('dl:open', (_, id) => downloads.openFile(id));
+  ipcMain.handle('dl:show', (_, id) => downloads.showInFolder(id));
+  ipcMain.handle('dl:cancel', (_, id) => downloads.cancel(id));
   ipcMain.handle('find', (_, text, fwd = true) => {
     const wc = tabs.get(activeId)?.webContents; if (!wc) return;
     text ? wc.findInPage(text, { forward: fwd, findNext: true }) : wc.stopFindInPage('clearSelection');
@@ -245,7 +254,7 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
 }
 
 app.whenReady().then(() => {
-  bookmarks = store.load('bookmarks', []); history = store.load('history', []); sitePerms = store.load('perms', {});
+  bookmarks = store.load('bookmarks', []); history = store.load('history', []); sitePerms = store.load('perms', {}); downloads.hydrate(store.load('downloads', []));
   widgets.init(); localai.init();
   setupPrivacy(); setupIpc();
   network.init().catch(e => console.log('[xer] network init', e.message));
