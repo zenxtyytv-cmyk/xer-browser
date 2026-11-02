@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Pinned tabs: double-click a tab (or Ctrl+Shift+P) to pin it to the front of the tab bar; click the pin to unpin, middle-click closes a tab.
 - Downloads manager (⬇ button): downloads auto-save to your Downloads folder with live progress, cancel, open, and show-in-folder; the list persists across restarts. Built on Electron's native download APIs.
 - Fixed: internal pages (reader mode, error pages) no longer appear in history.
 - New downloads test (real HTTP download, uniquified filenames, cancel flow).

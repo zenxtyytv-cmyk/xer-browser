@@ -6,7 +6,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - **Proxy / VPN manager** (Settings): route traffic through any SOCKS5/HTTP proxy, including VPN-provider proxy endpoints, Tor (`socks5://127.0.0.1:9050`), or a local WireGuard/OpenVPN SOCKS port. Xer does not run VPN servers itself.
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.
 - **Local AI**: use Ollama models on-device instead of Claude (Settings > AI assistant).
-- Tabs, URL/search bar (DuckDuckGo default), keyboard shortcuts (Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+J)
+- Tabs (double-click or Ctrl+Shift+P to pin, middle-click to close), URL/search bar (DuckDuckGo default), keyboard shortcuts (Ctrl+T, Ctrl+W, Ctrl+L, Ctrl+J)
 - Built-in ad/tracker blocking with a live counter
 - Removed Chromium/Google extras: sync, telemetry, crash reporting, auto-update pings, Translate, FLoC/Topics, Media Router, X-Client-Data header
 - Auto-upgrade HTTP to HTTPS, DNT + GPC headers, cross-origin referrer trimming
@@ -67,9 +67,9 @@ npm run dist
 ```
 
 ## Roadmap
-Claude page actions with approval (fill forms, etc.), extension support, split/pinned tabs.
+Claude page actions with approval (fill forms, etc.), extension support, split tabs.
 
-Done: tabs, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager.
+Done: tabs, pinned tabs, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager.
 
 ## Testing
 ```
@@ -79,10 +79,11 @@ xvfb-run -a npx electron test/reader.js --no-sandbox --disable-gpu
 xvfb-run -a npx electron test/features.js --no-sandbox --disable-gpu
 xvfb-run -a node test/security.js
 xvfb-run -a npx electron test/downloads.js --no-sandbox --disable-gpu
+xvfb-run -a npx electron test/pins.js --no-sandbox --disable-gpu
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl +/-/0 zoom, F12 devtools.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+P pin/unpin current tab, Ctrl +/-/0 zoom, F12 devtools. Double-click a tab to pin it, click the pin to unpin, middle-click a tab to close it.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)

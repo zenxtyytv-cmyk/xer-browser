@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const inv = (c) => (...a) => ipcRenderer.invoke(c, ...a);
 contextBridge.exposeInMainWorld('xer', {
-  newTab: inv('tab:new'), switchTab: inv('tab:switch'), closeTab: inv('tab:close'),
+  newTab: inv('tab:new'), switchTab: inv('tab:switch'), closeTab: inv('tab:close'), pinTab: inv('tab:pin'),
   go: inv('nav:go'), back: inv('nav:back'), forward: inv('nav:forward'), reload: inv('nav:reload'),
   toggleSidebar: inv('sidebar:toggle'),
   bookmarks: inv('bm:list'), toggleBookmark: inv('bm:toggle'), history: inv('hist:list'), clearHistory: inv('hist:clear'),

@@ -7,6 +7,7 @@ const network = require('./network');
 const localai = require('./localai');
 const widgets = require('./widgets');
 const downloads = require('./downloads');
+const { PinState } = require('./pins');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -26,6 +27,7 @@ app.commandLine.appendSwitch('enable-features', 'DnsOverHttps');
 
 let win;
 const tabs = new Map(); // id -> BrowserView
+const pins = new PinState(); // pinned tab ids
 let activeId = null;
 let nextId = 1;
 let sidebarOpen = false;
@@ -44,9 +46,10 @@ function layout() {
 function pushTabs() {
   win.webContents.send('tabs', {
     activeId,
-    tabs: [...tabs.entries()].map(([id, v]) => ({
-      id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL()
-    })),
+    tabs: pins.order([...tabs.keys()]).map(id => {
+      const v = tabs.get(id);
+      return { id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL(), pinned: pins.is(id) };
+    }),
     blocked: stats.blocked
   });
 }
@@ -100,9 +103,10 @@ function switchTab(id) {
 function closeTab(id) {
   const v = tabs.get(id); if (!v) return;
   win.removeBrowserView(v); v.webContents.destroy(); tabs.delete(id);
+  pins.prune(tabs.keys());
   if (activeId === id) {
     activeId = null;
-    const next = [...tabs.keys()].pop();
+    const next = pins.order([...tabs.keys()]).pop();
     next ? switchTab(next) : newTab();
   } else pushTabs();
 }
@@ -163,6 +167,7 @@ function setupIpc() {
   ipcMain.handle('tab:new', (_, url) => newTab(url));
   ipcMain.handle('tab:switch', (_, id) => switchTab(id));
   ipcMain.handle('tab:close', (_, id) => closeTab(id));
+  ipcMain.handle('tab:pin', (_, id) => { if (!tabs.has(id)) return false; pins.toggle(id); pushTabs(); return pins.is(id); });
   ipcMain.handle('nav:go', (_, url) => tabs.get(activeId)?.webContents.loadURL(normalize(url)));
   ipcMain.handle('nav:back', () => tabs.get(activeId)?.webContents.goBack());
   ipcMain.handle('nav:forward', () => tabs.get(activeId)?.webContents.goForward());
@@ -281,6 +286,7 @@ app.whenReady().then(() => {
       if (i.key === '0') { tabs.get(activeId)?.webContents.setZoomLevel(0); e.preventDefault(); }
       if (i.key === 'Tab') { const ids = [...tabs.keys()]; switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
       if (i.key === 'j') { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
+      if (i.shift && i.key.toLowerCase() === 'p') { win.webContents.send('shortcut', 'pin'); e.preventDefault(); }
     }
   });
 });

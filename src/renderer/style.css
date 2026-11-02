@@ -5,6 +5,9 @@ body{background:#0b0b10;color:#e8e8f0;font:13px system-ui,sans-serif;overflow:hi
 #tabs{display:flex;gap:2px;overflow:hidden}
 .tab{display:flex;align-items:center;gap:8px;width:180px;height:30px;padding:0 10px;background:#1c1c28;border-radius:8px 8px 0 0;cursor:pointer;color:#9a9ab0}
 .tab.active{background:#262638;color:#fff}
+.tab.pinned{width:130px;background:#22222f}
+.tab.pinned.active{background:#2b2b42}
+.tab.pinned span{font-weight:600}
 .tab span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tab b{font-weight:400;opacity:.6}.tab b:hover{opacity:1}
 button{background:#262638;color:#e8e8f0;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}

@@ -1,16 +1,29 @@
 const $ = (id) => document.getElementById(id);
 const history = [];
+let activeTabId = null;
 
 xer.on('tabs', ({ tabs, activeId, blocked }) => {
+  activeTabId = activeId;
   $('tabs').innerHTML = '';
   tabs.forEach(t => {
     const el = document.createElement('div');
-    el.className = 'tab' + (t.id === activeId ? ' active' : '');
+    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '');
     const s = document.createElement('span'); s.textContent = t.title;
-    const x = document.createElement('b'); x.textContent = '\u00d7';
-    x.onclick = (e) => { e.stopPropagation(); xer.closeTab(t.id); };
+    if (t.pinned) {
+      const pin = document.createElement('b'); pin.textContent = '\u{1F4CC}'; pin.title = 'Unpin tab';
+      pin.onclick = (e) => { e.stopPropagation(); xer.pinTab(t.id); };
+      el.append(pin, s);
+      el.title = 'Pinned — click the pin to unpin';
+    } else {
+      const x = document.createElement('b'); x.textContent = '\u00d7'; x.title = 'Close tab';
+      x.onclick = (e) => { e.stopPropagation(); xer.closeTab(t.id); };
+      el.append(s, x);
+      el.title = 'Double-click to pin';
+    }
     el.onclick = () => xer.switchTab(t.id);
-    el.append(s, x); $('tabs').append(el);
+    el.ondblclick = (e) => { e.stopPropagation(); xer.pinTab(t.id); };
+    el.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); xer.closeTab(t.id); } };
+    $('tabs').append(el);
     if (t.id === activeId && document.activeElement !== $('url') && !t.url.startsWith('file:')) $('url').value = t.url;
     if (t.id === activeId && t.url.startsWith('file:')) $('url').value = '';
   });
@@ -128,6 +141,7 @@ xer.on('shortcut', (s) => {
   if (s === 'bookmark') $('star').click();
   if (s === 'history') $('histBtn').click();
   if (s === 'find') { $('findbar').hidden = false; $('findInput').focus(); $('findInput').select(); }
+  if (s === 'pin' && activeTabId != null) xer.pinTab(activeTabId);
 });
 
 // ---- claude quick actions ----
