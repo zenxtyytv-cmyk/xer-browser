@@ -1,13 +1,14 @@
 {
   "name": "xer-browser",
   "productName": "Xer Browser",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Privacy-first Chromium-based browser with built-in Claude assistant",
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder",
-    "dist:win": "electron-builder --win"
+    "dist:win": "electron-builder --win",
+    "test": "bash test/run-all.sh"
   },
   "license": "MIT",
   "devDependencies": {

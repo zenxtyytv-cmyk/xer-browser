@@ -1,13 +1,22 @@
 # Changelog
 
-## Unreleased
-- Pinned tabs: double-click a tab (or Ctrl+Shift+P) to pin it to the front of the tab bar; click the pin to unpin, middle-click closes a tab.
-- Downloads manager (⬇ button): downloads auto-save to your Downloads folder with live progress, cancel, open, and show-in-folder; the list persists across restarts. Built on Electron's native download APIs.
+## 0.5.0
+- Downloads manager (Ctrl+Shift+J or the ⬇ toolbar button): auto-saves to your Downloads folder with live progress, cancel, open, show-in-folder, a live badge while downloading, and a list that persists across restarts.
+- Session restore: open web tabs are saved on quit and restored on the next launch (Firefox-style).
+- Pinned tabs: double-click a tab, right-click it, or press Ctrl+Shift+P. Pinned tabs sit first in the bar and show as compact favicon tabs.
+- Reopen closed tab (Ctrl+Shift+T or the tab context menu): keeps the last 25 closed web tabs.
+- Per-tab favicons, loading state, right-click tab menu (Reload / Duplicate / Pin / Close / Reopen closed), middle-click to close.
+- Awesomebar: address-bar suggestions from local history and bookmarks, computed on-device (nothing is uploaded).
 - Fixed: internal pages (reader mode, error pages) no longer appear in history.
-- New downloads test (real HTTP download, uniquified filenames, cancel flow).
-- Windows install guide in README (installer, portable, from source).
-- GitHub Actions workflow template (docs/build-windows.yml.txt) builds the Windows .exe installer and portable app.
+- Merged the feature branch with main: one downloads implementation (downloads.js) and one pin implementation (pins.js) instead of two competing ones.
+- New downloads and pins tests.
+- Fixed: bookmarks, history, session and permissions are now saved atomically (temp file + rename, with a .bak fallback), so a crash or kill mid-save can no longer wipe them.
+- Session restore keeps pinned tabs, autosaves after changes, and never overwrites a good session with an empty one during shutdown.
+- Awesomebar ranking: host and prefix matches first, bookmarks boosted, recent history favored (suggest.js, unit tested).
+- Tests: one command (npm test) runs all 10 suites; tests use isolated profiles and wait for startup instead of fixed sleeps.
+- Windows install guide in README (portable zip, from source, build your own) and a GitHub Actions template for the .exe installer.
 - App icon.
+- Open-source inspiration: Zen Browser (compact pinned tabs), Firefox (awesomebar, session restore), Brave (privacy-first defaults).
 
 ## 0.4.0
 - Reader mode (📖 toolbar button): clean, distraction-free article view using Mozilla Readability (Apache-2.0), same engine as Firefox.

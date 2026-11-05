@@ -3,6 +3,7 @@ const path = require('path');
 const { isBlocked } = require('./blocklist');
 const claude = require('./claude');
 const store = require('./store');
+const { suggest: suggestRank } = require('./suggest');
 const network = require('./network');
 const localai = require('./localai');
 const widgets = require('./widgets');
@@ -35,6 +36,10 @@ const TOOLBAR_H = 84;
 const SIDEBAR_W = 360;
 const stats = { blocked: 0 };
 
+// v0.5: per-tab favicons and closed-tab stack (Ctrl+Shift+T). Pins live in pins.js, downloads in downloads.js.
+const favicons = new Map(); // id -> favicon url
+const closedStack = []; // [{url, title}] most-recent-last
+
 function layout() {
   if (!win) return;
   const [w, h] = win.getContentSize();
@@ -44,11 +49,13 @@ function layout() {
 }
 
 function pushTabs() {
+  scheduleSessionSave();
   win.webContents.send('tabs', {
     activeId,
     tabs: pins.order([...tabs.keys()]).map(id => {
       const v = tabs.get(id);
-      return { id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL(), pinned: pins.is(id) };
+      return { id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL(),
+        pinned: pins.is(id), favicon: favicons.get(id) || '', loading: v.webContents.isLoading() };
     }),
     blocked: stats.blocked
   });
@@ -72,6 +79,10 @@ function newTab(url) {
   wc.setWindowOpenHandler(({ url }) => { newTab(url); return { action: 'deny' }; });
   ['page-title-updated', 'did-navigate', 'did-navigate-in-page', 'did-start-loading', 'did-stop-loading']
     .forEach(e => wc.on(e, pushTabs));
+  // v0.5: favicon capture
+  wc.on('page-favicon-updated', (_, urls) => {
+    if (urls && urls.length) { favicons.set(id, urls[0]); pushTabs(); }
+  });
   // Auto-upgrade http -> https
   wc.on('did-navigate', (_, u) => {
     if (!/^https?:/i.test(u)) return; // only real web pages, not reader/error/data pages
@@ -102,13 +113,65 @@ function switchTab(id) {
 
 function closeTab(id) {
   const v = tabs.get(id); if (!v) return;
+  // v0.5: remember closed tab for Ctrl+Shift+T (skip internal pages)
+  try {
+    const u = v.webContents.getURL();
+    if (/^https?:/.test(u)) {
+      closedStack.push({ url: u, title: v.webContents.getTitle() });
+      if (closedStack.length > 25) closedStack.shift();
+    }
+  } catch {}
   win.removeBrowserView(v); v.webContents.destroy(); tabs.delete(id);
-  pins.prune(tabs.keys());
+  pins.prune(tabs.keys()); favicons.delete(id);
   if (activeId === id) {
     activeId = null;
     const next = pins.order([...tabs.keys()]).pop();
     next ? switchTab(next) : newTab();
   } else pushTabs();
+}
+
+function reopenClosedTab() {
+  while (closedStack.length) {
+    const t = closedStack.pop();
+    if (t.url && /^https?:/.test(t.url)) { newTab(t.url); return true; }
+  }
+  return false;
+}
+
+function duplicateTab(id) {
+  const v = tabs.get(id); if (!v) return;
+  try { newTab(v.webContents.getURL()); } catch {}
+}
+
+// v0.5: session restore (Firefox-style) — save open web tabs on quit, reopen on start
+// Session format v2: [{url, pinned}]. Older sessions (plain URL strings) still load.
+let sessionTimer = null;
+let sessionAllowEmpty = false; // set true only when the user deliberately closes every tab
+let quitting = false;
+function saveSession() {
+  const rows = pins.order([...tabs.keys()]).map(id => {
+    let url = ''; try { url = tabs.get(id).webContents.getURL(); } catch {}
+    return { url, pinned: pins.is(id) };
+  }).filter(r => /^https?:/.test(r.url));
+  // During shutdown the tabs may already be torn down. Never replace a good session with an empty one.
+  if (!rows.length && !sessionAllowEmpty) return;
+  store.save('session', rows.slice(0, 40));
+}
+// Debounced autosave so a crash or kill does not lose your tabs.
+function scheduleSessionSave() {
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(() => { if (!quitting) { try { saveSession(); } catch {} } }, 1500);
+}
+
+function restoreSession() {
+  const rows = store.load('session', []);
+  if (!Array.isArray(rows)) return false;
+  const norm = rows.map(r => typeof r === 'string' ? { url: r, pinned: false } : r)
+    .filter(r => r && /^https?:/.test(r.url)).slice(0, 40);
+  if (!norm.length) return false;
+  norm.forEach(r => { const id = newTab(r.url); if (r.pinned) pins.toggle(id); });
+  pushTabs();
+  return true;
 }
 
 async function setupAdblock(ses) {
@@ -153,6 +216,7 @@ function setupPrivacy() {
       .then(r => { const ok = r.response === 0; if (r.checkboxChecked) { sitePerms[key] = ok; store.save('perms', sitePerms); } cb(ok); });
   });
   ses.setSpellCheckerEnabled(false);
+
 }
 
 async function pageContext() {
@@ -163,15 +227,21 @@ async function pageContext() {
   return { title: wc.getTitle(), url: wc.getURL(), text: text.slice(0, 12000) };
 }
 
+// v0.5: awesomebar. Ranking lives in suggest.js (pure, tested); data stays on-device.
+const suggest = (q) => suggestRank(q, history, bookmarks);
+
 function setupIpc() {
   ipcMain.handle('tab:new', (_, url) => newTab(url));
   ipcMain.handle('tab:switch', (_, id) => switchTab(id));
   ipcMain.handle('tab:close', (_, id) => closeTab(id));
+  ipcMain.handle('tab:reopen', () => reopenClosedTab());
+  ipcMain.handle('tab:duplicate', (_, id) => duplicateTab(id));
   ipcMain.handle('tab:pin', (_, id) => { if (!tabs.has(id)) return false; pins.toggle(id); pushTabs(); return pins.is(id); });
   ipcMain.handle('nav:go', (_, url) => tabs.get(activeId)?.webContents.loadURL(normalize(url)));
   ipcMain.handle('nav:back', () => tabs.get(activeId)?.webContents.goBack());
   ipcMain.handle('nav:forward', () => tabs.get(activeId)?.webContents.goForward());
   ipcMain.handle('nav:reload', () => tabs.get(activeId)?.webContents.reload());
+  ipcMain.handle('nav:suggest', (_, q) => suggest(q));
   ipcMain.handle('sidebar:toggle', () => { sidebarOpen = !sidebarOpen; layout(); return sidebarOpen; });
   ipcMain.handle('bm:list', () => bookmarks);
   ipcMain.handle('bm:toggle', () => {
@@ -270,12 +340,13 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   win.loadFile(path.join(__dirname, '../renderer/index.html'));
   win.on('resize', layout);
-  win.webContents.once('did-finish-load', () => newTab());
+  // v0.5: restore last session's tabs (if any), else open a fresh new-tab page
+  win.webContents.once('did-finish-load', () => { if (!restoreSession()) newTab(); });
   win.webContents.on('before-input-event', (e, i) => {
     if (i.key === 'F12' && i.type === 'keyDown') tabs.get(activeId)?.webContents.toggleDevTools();
     if (i.control && i.type === 'keyDown') {
-      if (i.key === 't') { newTab(); e.preventDefault(); }
-      if (i.key === 'w') { closeTab(activeId); e.preventDefault(); }
+      if (i.key === 't' && !i.shift) { newTab(); e.preventDefault(); }
+      if (i.key === 'w' && !i.shift) { closeTab(activeId); e.preventDefault(); }
       if (i.key === 'l') { win.webContents.send('focus-url'); e.preventDefault(); }
       if (i.key === 'r') { tabs.get(activeId)?.webContents.reload(); e.preventDefault(); }
       if (i.key === 'd') { win.webContents.send('shortcut', 'bookmark'); e.preventDefault(); }
@@ -285,8 +356,10 @@ app.whenReady().then(() => {
       if (i.key === '-') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() - 0.5); e.preventDefault(); }
       if (i.key === '0') { tabs.get(activeId)?.webContents.setZoomLevel(0); e.preventDefault(); }
       if (i.key === 'Tab') { const ids = [...tabs.keys()]; switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
-      if (i.key === 'j') { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
+      if (i.key === 'j' && !i.shift) { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
       if (i.shift && i.key.toLowerCase() === 'p') { win.webContents.send('shortcut', 'pin'); e.preventDefault(); }
+      if (i.shift && i.key.toLowerCase() === 't') { reopenClosedTab(); e.preventDefault(); } // Ctrl+Shift+T
+      if (i.shift && i.key.toLowerCase() === 'j') { win.webContents.send('shortcut', 'downloads'); e.preventDefault(); } // Ctrl+Shift+J
     }
   });
 });
@@ -294,4 +367,7 @@ app.on('login', (e, wc, req, authInfo, cb) => {
   const c = network.credsFor(authInfo);
   if (c) { e.preventDefault(); cb(c.username, c.password); }
 });
-app.on('window-all-closed', () => app.quit());
+// v0.5: persist session before quit
+app.on('before-quit', () => { if (!quitting) { try { saveSession(); } catch {} } quitting = true; clearTimeout(sessionTimer); });
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { try { if (!quitting) saveSession(); } catch {} quitting = true; app.quit(); });
+app.on('window-all-closed', () => { if (!quitting) { try { saveSession(); } catch {} } quitting = true; app.quit(); });

@@ -5,15 +5,18 @@ let activeTabId = null;
 xer.on('tabs', ({ tabs, activeId, blocked }) => {
   activeTabId = activeId;
   $('tabs').innerHTML = '';
-  tabs.forEach(t => {
+  const frag = document.createDocumentFragment();
+  tabs.filter(t => t.pinned).concat(tabs.filter(t => !t.pinned)).forEach(t => {
     const el = document.createElement('div');
-    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '');
+    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '') + (t.loading ? ' loading' : '');
+    if (t.favicon) { const img = document.createElement('img'); img.className = 'fav'; img.src = t.favicon; el.append(img); }
     const s = document.createElement('span'); s.textContent = t.title;
     if (t.pinned) {
       const pin = document.createElement('b'); pin.textContent = '\u{1F4CC}'; pin.title = 'Unpin tab';
       pin.onclick = (e) => { e.stopPropagation(); xer.pinTab(t.id); };
-      el.append(pin, s);
-      el.title = 'Pinned — click the pin to unpin';
+      if (!t.favicon) el.append(pin);
+      el.append(s);
+      el.title = (t.title || '') + ' (pinned: right-click to unpin)';
     } else {
       const x = document.createElement('b'); x.textContent = '\u00d7'; x.title = 'Close tab';
       x.onclick = (e) => { e.stopPropagation(); xer.closeTab(t.id); };
@@ -22,20 +25,76 @@ xer.on('tabs', ({ tabs, activeId, blocked }) => {
     }
     el.onclick = () => xer.switchTab(t.id);
     el.ondblclick = (e) => { e.stopPropagation(); xer.pinTab(t.id); };
-    el.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); xer.closeTab(t.id); } };
-    $('tabs').append(el);
+    el.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); e.stopPropagation(); xer.closeTab(t.id); } };
+    el.oncontextmenu = (e) => { e.preventDefault(); tabMenu(e, t); };
+    frag.append(el);
     if (t.id === activeId && document.activeElement !== $('url') && !t.url.startsWith('file:')) $('url').value = t.url;
     if (t.id === activeId && t.url.startsWith('file:')) $('url').value = '';
   });
+  $('tabs').append(frag);
   $('shield').textContent = blocked + ' blocked';
 });
+
+// ---- tab context menu ----
+const menu = $('tabmenu');
+function tabMenu(e, t) {
+  menu.innerHTML = '';
+  const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onmousedown = (ev) => { ev.preventDefault(); hideMenu(); fn(); }; menu.append(b); };
+  mk('Reload', () => { xer.switchTab(t.id); setTimeout(() => xer.reload(), 50); });
+  mk('Duplicate', () => xer.duplicateTab(t.id));
+  mk(t.pinned ? 'Unpin tab' : 'Pin tab', () => xer.pinTab(t.id));
+  mk('Close tab', () => xer.closeTab(t.id));
+  mk('Reopen closed tab (Ctrl+Shift+T)', () => xer.reopenTab());
+  menu.hidden = false;
+  menu.style.left = Math.min(e.clientX, innerWidth - 240) + 'px';
+  menu.style.top = e.clientY + 'px';
+}
+function hideMenu() { menu.hidden = true; }
+window.addEventListener('mousedown', (e) => { if (!menu.hidden && !menu.contains(e.target)) hideMenu(); });
+window.addEventListener('blur', hideMenu);
 
 $('newtab').onclick = () => xer.newTab();
 $('back').onclick = () => xer.back();
 $('fwd').onclick = () => xer.forward();
 $('reload').onclick = () => xer.reload();
-$('url').addEventListener('keydown', e => { if (e.key === 'Enter') { xer.go($('url').value); $('url').blur(); } });
 xer.on('focus-url', () => { $('url').focus(); $('url').select(); });
+
+// ---- awesomebar: on-device suggestions from history + bookmarks ----
+const sug = $('suggest');
+let sugItems = [], sugIndex = -1, sugTimer = null;
+function renderSug() {
+  sug.innerHTML = '';
+  if (!sugItems.length) { sug.hidden = true; return; }
+  sug.hidden = false;
+  sugItems.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'sug' + (i === sugIndex ? ' sel' : '');
+    const t = document.createElement('span'); t.textContent = s.title;
+    const u = document.createElement('small'); u.textContent = s.url;
+    const tag = document.createElement('b'); tag.textContent = s.src;
+    d.append(t, u, tag);
+    d.onmousedown = (e) => { e.preventDefault(); pickSug(s); };
+    sug.append(d);
+  });
+}
+function pickSug(s) { sugItems = []; sugIndex = -1; renderSug(); xer.go(s.url); $('url').blur(); }
+$('url').addEventListener('input', () => {
+  clearTimeout(sugTimer);
+  sugTimer = setTimeout(async () => {
+    sugItems = await xer.suggest($('url').value);
+    sugIndex = -1; renderSug();
+  }, 150);
+});
+$('url').addEventListener('keydown', (e) => {
+  if (!sugItems.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); sugIndex = (sugIndex + 1) % sugItems.length; renderSug(); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); sugIndex = (sugIndex - 1 + sugItems.length) % sugItems.length; renderSug(); }
+  if (e.key === 'Enter' && sugIndex >= 0) { e.preventDefault(); pickSug(sugItems[sugIndex]); }
+  if (e.key === 'Escape') { sugItems = []; sugIndex = -1; renderSug(); }
+});
+$('url').addEventListener('blur', () => setTimeout(() => { sug.hidden = true; }, 150));
+$('url').addEventListener('focus', () => { if (sugItems.length) sug.hidden = false; });
+$('url').addEventListener('keydown', e => { if (e.key === 'Enter' && sugIndex < 0) { xer.go($('url').value); $('url').blur(); } });
 
 async function toggleSidebar() {
   const open = await xer.toggleSidebar();
@@ -74,7 +133,7 @@ xer.on('tabs', async ({ tabs, activeId }) => {
   const bms = await xer.bookmarks(); $('star').textContent = bms.some(b => b.url === t.url) ? '\u2605' : '\u2606';
 });
 
-// ---- panel (bookmarks + history) ----
+// ---- panel (bookmarks + history + downloads) ----
 let panelMode = null;
 async function showPanel(mode) {
   if (panelMode === mode) { $('panel').hidden = true; panelMode = null; return; }
@@ -122,7 +181,12 @@ function renderDownloads(list) {
     $('panelBody').append(d);
   });
 }
-xer.on('downloads', (list) => { if (panelMode === 'downloads' && !$('panel').hidden) renderDownloads(list); });
+xer.on('downloads', (list) => {
+  if (panelMode === 'downloads' && !$('panel').hidden) renderDownloads(list);
+  const active = (list || []).filter(i => i.state === 'progressing').length;
+  $('dlBadge').textContent = active || '';
+  $('dlBadge').style.display = active ? '' : 'none';
+});
 $('histBtn').onclick = () => showPanel('history');
 $('dlBtn').onclick = () => showPanel('downloads');
 $('panelClose').onclick = () => { $('panel').hidden = true; panelMode = null; };
@@ -140,6 +204,7 @@ $('findPrev').onclick = () => xer.find($('findInput').value, false);
 xer.on('shortcut', (s) => {
   if (s === 'bookmark') $('star').click();
   if (s === 'history') $('histBtn').click();
+  if (s === 'downloads') $('dlBtn').click();
   if (s === 'find') { $('findbar').hidden = false; $('findInput').focus(); $('findInput').select(); }
   if (s === 'pin' && activeTabId != null) xer.pinTab(activeTabId);
 });
