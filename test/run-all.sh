@@ -14,6 +14,7 @@ run features  $ELEC test/features.js $FLAGS
 run reader    $ELEC test/reader.js $FLAGS
 run downloads $ELEC test/downloads.js $FLAGS
 run pins      $ELEC test/pins.js $FLAGS
+run actions   $ELEC test/actions.js $FLAGS
 run e2e       node test/e2e.js
 run security  node test/security.js
 run session   node test/session.js

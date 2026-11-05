@@ -67,3 +67,11 @@ button:hover{background:#34344d}
 #tabmenu[hidden]{display:none}
 #tabmenu button{background:none;text-align:left;border-radius:6px;padding:7px 12px;font-size:12px}
 #tabmenu button:hover{background:#34344d}
+
+.m.act{background:#1b1b2a;border:1px solid #3a3a5a;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.actrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}
+.actrow span{flex:1 1 100%;word-break:break-word}
+.actrow button{padding:3px 10px;border-radius:5px;border:1px solid #444;background:#222;color:#ddd;cursor:pointer}
+.actrow button.approve{background:#2d6a4f;border-color:#2d6a4f;color:#fff}
+.actrow i{color:#8c8;font-style:normal}.actrow i.bad{color:#f88}
+#keyErr.err{color:#f88;font-size:12px}

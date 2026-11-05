@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+- New: **Claude page actions with approval**. Claude can propose clicks, typing, scrolling and navigation; each action is shown as a card and only runs after you press Approve. Actions are re-validated in the main process, limited to the tab they were proposed for, capped at 8 per reply, and never touch password, card or identity fields. Works with Claude and local (Ollama) models.
+- Fixed: saving the API key no longer fails silently when OS encryption is unavailable (the error is now shown).
+- Fixed: chat history sent to Claude is capped at the last 20 messages to avoid oversized requests.
+- README: removed a duplicated downloads entry. New `test/actions.js` (21 checks); `npm test` now runs 11 suites.
+
 ## 0.5.0
 - Downloads manager (Ctrl+Shift+J or the ⬇ toolbar button): auto-saves to your Downloads folder with live progress, cancel, open, show-in-folder, a live badge while downloading, and a list that persists across restarts.
 - Session restore: open web tabs are saved on quit and restored on the next launch (Firefox-style).

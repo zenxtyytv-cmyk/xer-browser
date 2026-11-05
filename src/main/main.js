@@ -6,6 +6,7 @@ const store = require('./store');
 const { suggest: suggestRank } = require('./suggest');
 const network = require('./network');
 const localai = require('./localai');
+const actions = require('./actions');
 const widgets = require('./widgets');
 const downloads = require('./downloads');
 const { PinState } = require('./pins');
@@ -314,17 +315,34 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
   ipcMain.handle('ai:models', guard(async () => { try { return { ok: true, models: await localai.models() }; } catch (e) { return { ok: false, error: 'Ollama not reachable at ' + localai.get().ollamaUrl }; } }));
   ipcMain.handle('open:settings', () => newTab('file://' + path.join(__dirname, '../renderer/settings.html')));
   ipcMain.handle('claude:hasKey', () => claude.hasKey());
-  ipcMain.handle('claude:setKey', (_, k) => { claude.saveKey(k); return true; });
-  ipcMain.handle('claude:ask', async (_, { messages, withPage }) => {
+  ipcMain.handle('claude:setKey', (_, k) => { try { claude.saveKey(String(k || '').trim()); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; } });
+  ipcMain.handle('claude:ask', async (_, { messages, withPage, allowActions }) => {
     try {
       const pc = withPage ? await pageContext() : null;
+      const add = allowActions && pc ? actions.SYSTEM_ADDENDUM : '';
+      let text;
       if (localai.get().provider === 'local') {
-        const system = 'You are the assistant of Xer Browser. Be concise.' + (pc ? `\n\nPage: ${pc.title} (${pc.url})\n${pc.text}` : '');
-        return { ok: true, text: await localai.ask({ messages, system }) };
+        const system = 'You are the assistant of Xer Browser. Be concise.' + (pc ? `\n\nPage: ${pc.title} (${pc.url})\n${pc.text}` : '') + add;
+        text = await localai.ask({ messages, system });
+      } else {
+        text = await claude.ask({ messages, pageContext: pc, extraSystem: add });
       }
-      return { ok: true, text: await claude.ask({ messages, pageContext: pc }) };
+      // Proposed actions are only parsed here; nothing runs until the user approves each one.
+      const parsed = add ? actions.parse(text) : { text, actions: [] };
+      return { ok: true, text: parsed.text || text, actions: parsed.actions, tabId: activeId };
     }
     catch (e) { return { ok: false, error: e.message }; }
+  });
+  // Runs ONE user-approved action on the tab it was proposed for. Re-validated here in main.
+  ipcMain.handle('claude:runAction', async (_, { action, tabId }) => {
+    try {
+      const v = actions.validate(action); if (!v.ok) return { ok: false, error: v.error };
+      const a = v.action, view = tabs.get(tabId);
+      if (!view) return { ok: false, error: 'That tab was closed.' };
+      if (tabId !== activeId) return { ok: false, error: 'Switch back to the tab this action was proposed for.' };
+      if (a.type === 'navigate') { await view.webContents.loadURL(a.url); return { ok: true }; }
+      return await view.webContents.executeJavaScript(actions.pageScript(a));
+    } catch (e) { return { ok: false, error: e.message }; }
   });
 }
 

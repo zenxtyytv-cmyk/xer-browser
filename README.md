@@ -16,8 +16,8 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - Auto-upgrade HTTP to HTTPS, DNT + GPC headers, cross-origin referrer trimming
 - All site permissions (camera, mic, location, notifications) denied by default
 - Claude sidebar (Ctrl+J): chat, optionally reading the current page. API key encrypted via OS keychain.
+- **Claude page actions (with your approval)**: tick "actions" in the sidebar and ask Claude to do something ("fill the search box and press search"). It proposes clicks, typing, scrolling or navigation as cards, and nothing runs until you press **Approve** on each one. Password, card and identity fields are always refused, and only http(s) navigation is allowed.
 - Reader mode (📖 button): distraction-free view of any article, powered by Mozilla Readability
-- **Downloads manager** (⬇ button): auto-saves to your Downloads folder, live progress, cancel, open file / show in folder
 
 ## Install on Windows
 
@@ -71,9 +71,9 @@ npm run dist
 ```
 
 ## Roadmap
-Claude page actions with approval (fill forms, etc.), extension support, split tabs.
+Tab groups, extension support, split tabs, multi-step action plans.
 
-Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager.
+Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval.
 
 ## Testing
 ```

@@ -16,12 +16,12 @@ function loadKey() {
 }
 function hasKey() { return !!loadKey(); }
 
-async function ask({ messages, pageContext }) {
+async function ask({ messages, pageContext, extraSystem = '' }) {
   const key = loadKey();
   if (!key) throw new Error('No API key set. Open Claude settings and add your Anthropic key.');
   const system =
     'You are Claude, the built-in assistant of Xer Browser. Be concise and helpful.' +
-    (pageContext ? `\n\nCurrent page:\nTitle: ${pageContext.title}\nURL: ${pageContext.url}\nText (truncated):\n${pageContext.text}` : '');
+    (pageContext ? `\n\nCurrent page:\nTitle: ${pageContext.title}\nURL: ${pageContext.url}\nText (truncated):\n${pageContext.text}` : '') + extraSystem;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -29,7 +29,7 @@ async function ask({ messages, pageContext }) {
       'x-api-key': key,
       'anthropic-version': '2023-06-01'
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1500, system, messages })
+    body: JSON.stringify({ model: MODEL, max_tokens: 1500, system, messages: messages.slice(-20) })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message || `API error ${res.status}`);

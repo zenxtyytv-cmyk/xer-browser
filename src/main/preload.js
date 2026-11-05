@@ -11,6 +11,6 @@ contextBridge.exposeInMainWorld('xer', {
   find: inv('find'), zoom: inv('zoom'), devtools: inv('devtools'), resetPerms: inv('perms:reset'),
   readerOpen: inv('reader:open'),
   openSettings: inv('open:settings'), ai: { get: inv('ai:get'), set: inv('ai:set'), models: inv('ai:models') },
-  hasKey: inv('claude:hasKey'), setKey: inv('claude:setKey'), ask: inv('claude:ask'),
+  hasKey: inv('claude:hasKey'), setKey: inv('claude:setKey'), ask: inv('claude:ask'), runAction: inv('claude:runAction'),
   on: (ch, fn) => ipcRenderer.on(ch, (_, d) => fn(d))
 });

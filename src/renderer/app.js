@@ -106,7 +106,9 @@ xer.on('toggle-sidebar', toggleSidebar);
 
 $('keySave').onclick = async () => {
   const k = $('keyInput').value.trim(); if (!k) return;
-  await xer.setKey(k); $('keyInput').value = ''; $('keyBox').hidden = true;
+  const r = await xer.setKey(k);
+  if (r && r.ok === false) { $('keyErr').textContent = 'Could not save key: ' + r.error; $('keyErr').hidden = false; return; }
+  $('keyErr').hidden = true; $('keyInput').value = ''; $('keyBox').hidden = true;
 };
 
 function add(cls, text) {
@@ -118,10 +120,27 @@ async function send() {
   $('prompt').value = ''; add('user', text);
   history.push({ role: 'user', content: text });
   const wait = add('ai', '...');
-  const r = await xer.ask({ messages: history, withPage: $('withPage').checked });
+  const allow = $('allowAct').checked; if (allow) $('withPage').checked = true;
+  const r = await xer.ask({ messages: history, withPage: $('withPage').checked, allowActions: allow });
   wait.remove();
-  if (r.ok) { add('ai', r.text); history.push({ role: 'assistant', content: r.text }); }
+  if (r.ok) { add('ai', r.text); history.push({ role: 'assistant', content: r.text }); if (r.actions && r.actions.length) actionCard(r.actions, r.tabId); }
   else { add('err', r.error); history.pop(); }
+}
+// ---- Claude page actions: every action needs an explicit click on Approve ----
+function actionCard(list, tabId) {
+  const card = document.createElement('div'); card.className = 'm act';
+  const h = document.createElement('b'); h.textContent = 'Claude wants to do ' + list.length + (list.length === 1 ? ' thing' : ' things') + ':'; card.append(h);
+  list.forEach(a => {
+    const row = document.createElement('div'); row.className = 'actrow';
+    const lbl = document.createElement('span'); lbl.textContent = a.label + (a.type === 'type' ? ' \u2192 "' + a.text.slice(0, 60) + '"' : a.type === 'navigate' ? ' (' + a.url + ')' : '');
+    const ok = document.createElement('button'); ok.textContent = 'Approve'; ok.className = 'approve';
+    const no = document.createElement('button'); no.textContent = 'Deny';
+    const done = (msg, bad) => { ok.remove(); no.remove(); const st = document.createElement('i'); st.textContent = msg; if (bad) st.className = 'bad'; row.append(st); };
+    ok.onclick = async () => { ok.disabled = no.disabled = true; const r = await xer.runAction({ action: a, tabId }); done(r && r.ok ? 'Done' : 'Failed: ' + ((r && r.error) || 'unknown'), !(r && r.ok)); };
+    no.onclick = () => done('Denied');
+    row.append(lbl, ok, no); card.append(row);
+  });
+  $('msgs').append(card); $('msgs').scrollTop = 1e9;
 }
 $('send').onclick = send;
 $('prompt').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
