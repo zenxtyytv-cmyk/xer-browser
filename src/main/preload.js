@@ -3,6 +3,9 @@ const inv = (c) => (...a) => ipcRenderer.invoke(c, ...a);
 contextBridge.exposeInMainWorld('xer', {
   newTab: inv('tab:new'), switchTab: inv('tab:switch'), closeTab: inv('tab:close'),
   reopenTab: inv('tab:reopen'), duplicateTab: inv('tab:duplicate'), pinTab: inv('tab:pin'),
+  createGroup: inv('group:create'), addToGroup: inv('group:add'), removeFromGroup: inv('group:remove'),
+  renameGroup: inv('group:rename'), colorGroup: inv('group:color'), toggleGroup: inv('group:toggle'),
+  ungroup: inv('group:ungroup'), closeGroup: inv('group:close'),
   go: inv('nav:go'), back: inv('nav:back'), forward: inv('nav:forward'), reload: inv('nav:reload'),
   suggest: inv('nav:suggest'),
   toggleSidebar: inv('sidebar:toggle'),

@@ -75,3 +75,14 @@ button:hover{background:#34344d}
 .actrow button.approve{background:#2d6a4f;border-color:#2d6a4f;color:#fff}
 .actrow i{color:#8c8;font-style:normal}.actrow i.bad{color:#f88}
 #keyErr.err{color:#f88;font-size:12px}
+
+/* v0.7 tab groups */
+.gchip{display:flex;align-items:center;height:22px;padding:0 9px;margin:6px 2px 0 4px;border-radius:11px;font-size:11px;font-weight:600;color:#10101a;cursor:pointer;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;flex:none}
+.gchip.collapsed{opacity:.85}
+.tab.ingroup{border-top:2px solid var(--gc)}
+.g-blue{--gc:#6ea8ff}.g-red{--gc:#ff7b7b}.g-yellow{--gc:#ffd25e}.g-green{--gc:#6fdc8c}.g-pink{--gc:#ff8fd0}.g-purple{--gc:#b794ff}.g-cyan{--gc:#5ee6e6}.g-orange{--gc:#ffa35e}
+.gchip{background:var(--gc,#888)}
+#tabmenu .colorrow{display:flex;gap:6px;padding:6px 10px}
+#tabmenu .swatch{width:16px;height:16px;border-radius:50%;background:var(--gc);cursor:pointer;display:inline-block;border:2px solid transparent}
+#tabmenu .swatch.on{border-color:#fff}
+#tabmenu .gname{margin:4px 6px;padding:6px 8px;border-radius:6px;border:1px solid #34344d;background:#12121c;color:#fff;font-size:12px;outline:none}

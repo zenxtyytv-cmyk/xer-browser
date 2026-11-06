@@ -2,13 +2,31 @@ const $ = (id) => document.getElementById(id);
 const history = [];
 let activeTabId = null;
 
-xer.on('tabs', ({ tabs, activeId, blocked }) => {
+let lastGroups = [];
+xer.on('tabs', ({ tabs, activeId, blocked, groups = [] }) => {
   activeTabId = activeId;
+  lastGroups = groups;
+  const gmap = new Map(groups.map(g => [g.id, g]));
   $('tabs').innerHTML = '';
   const frag = document.createDocumentFragment();
-  tabs.filter(t => t.pinned).concat(tabs.filter(t => !t.pinned)).forEach(t => {
+  let lastGroup = null;
+  tabs.forEach(t => {
+    const g = t.groupId != null ? gmap.get(t.groupId) : null;
+    // A group chip precedes the first tab of each group; clicking it collapses or expands the group.
+    if (g && g.id !== lastGroup) {
+      const chip = document.createElement('div');
+      chip.className = 'gchip g-' + g.color + (g.collapsed ? ' collapsed' : '');
+      chip.textContent = (g.name || 'Group') + (g.collapsed ? ' \u25b8' : '');
+      chip.title = (g.collapsed ? 'Expand' : 'Collapse') + ' group (right-click for options)';
+      chip.onclick = () => xer.toggleGroup(g.id);
+      chip.oncontextmenu = (e) => { e.preventDefault(); groupMenu(e, g); };
+      frag.append(chip);
+    }
+    lastGroup = g ? g.id : null;
+    // Collapsed groups hide their tabs, except the active one so you never lose sight of where you are.
+    if (g && g.collapsed && t.id !== activeId) return;
     const el = document.createElement('div');
-    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '') + (t.loading ? ' loading' : '');
+    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '') + (t.loading ? ' loading' : '') + (g ? ' ingroup g-' + g.color : '');
     if (t.favicon) { const img = document.createElement('img'); img.className = 'fav'; img.src = t.favicon; el.append(img); }
     const s = document.createElement('span'); s.textContent = t.title;
     if (t.pinned) {
@@ -43,8 +61,36 @@ function tabMenu(e, t) {
   mk('Reload', () => { xer.switchTab(t.id); setTimeout(() => xer.reload(), 50); });
   mk('Duplicate', () => xer.duplicateTab(t.id));
   mk(t.pinned ? 'Unpin tab' : 'Pin tab', () => xer.pinTab(t.id));
+  if (!t.pinned) {
+    if (t.groupId == null) {
+      mk('Add to new group', () => xer.createGroup([t.id], '', undefined));
+      lastGroups.forEach(g => mk('Add to group: ' + (g.name || 'Group ' + g.id), () => xer.addToGroup(t.id, g.id)));
+    } else {
+      mk('Remove from group', () => xer.removeFromGroup(t.id));
+      lastGroups.filter(g => g.id !== t.groupId).forEach(g => mk('Move to group: ' + (g.name || 'Group ' + g.id), () => xer.addToGroup(t.id, g.id)));
+    }
+  }
   mk('Close tab', () => xer.closeTab(t.id));
   mk('Reopen closed tab (Ctrl+Shift+T)', () => xer.reopenTab());
+  menu.hidden = false;
+  menu.style.left = Math.min(e.clientX, innerWidth - 240) + 'px';
+  menu.style.top = e.clientY + 'px';
+}
+// Right-click a group chip: rename, recolor, ungroup, close all its tabs.
+const GROUP_COLORS = ['blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+function groupMenu(e, g) {
+  menu.innerHTML = '';
+  const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onmousedown = (ev) => { ev.preventDefault(); hideMenu(); fn(); }; menu.append(b); };
+  mk(g.collapsed ? 'Expand group' : 'Collapse group', () => xer.toggleGroup(g.id));
+  // Inline rename input (Electron has no window.prompt).
+  const inp = document.createElement('input'); inp.className = 'gname'; inp.placeholder = 'Group name'; inp.value = g.name || ''; inp.maxLength = 40;
+  inp.onkeydown = (ev) => { if (ev.key === 'Enter') { hideMenu(); xer.renameGroup(g.id, inp.value.trim()); } else if (ev.key === 'Escape') hideMenu(); };
+  menu.append(inp);
+  const row = document.createElement('div'); row.className = 'colorrow';
+  GROUP_COLORS.forEach(c => { const d = document.createElement('i'); d.className = 'swatch g-' + c + (c === g.color ? ' on' : ''); d.title = c; d.onmousedown = (ev) => { ev.preventDefault(); hideMenu(); xer.colorGroup(g.id, c); }; row.append(d); });
+  menu.append(row);
+  mk('Ungroup (keep tabs)', () => xer.ungroup(g.id));
+  mk('Close group', () => xer.closeGroup(g.id));
   menu.hidden = false;
   menu.style.left = Math.min(e.clientX, innerWidth - 240) + 'px';
   menu.style.top = e.clientY + 'px';

@@ -18,5 +18,6 @@ run actions   $ELEC test/actions.js $FLAGS
 run e2e       node test/e2e.js
 run security  node test/security.js
 run session   node test/session.js
+run groups    node test/groups.js
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"
 exit $fail

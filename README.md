@@ -7,6 +7,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.
 - **Local AI**: use Ollama models on-device instead of Claude (Settings > AI assistant).
 - Tabs: double-click, right-click or Ctrl+Shift+P to pin; per-tab favicons; middle-click to close; right-click menu (Reload / Duplicate / Pin / Close / Reopen closed). URL/search bar (DuckDuckGo default).
+- **Tab groups**: right-click a tab > *Add to new group*, then right-click the colored group chip to rename, recolor (8 colors), collapse/expand, ungroup or close the whole group. Group tabs stay side by side, links opened from a grouped tab join its group, pinned tabs can't be grouped, and groups (name, color, collapsed state) come back after a restart.
 - **Reopen closed tab** (Ctrl+Shift+T): a 25-deep memory of closed web tabs.
 - **Session restore**: your open web tabs come back on the next launch.
 - **Downloads manager** (Ctrl+Shift+J or the ⬇ toolbar button): live progress, cancel, Open / Show in folder, clear finished, persists across restarts.
@@ -71,9 +72,9 @@ npm run dist
 ```
 
 ## Roadmap
-Tab groups, extension support, split tabs, multi-step action plans.
+Extension support, split tabs, multi-step action plans, drag-and-drop tab reordering.
 
-Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval.
+Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups.
 
 ## Testing
 ```
@@ -84,6 +85,7 @@ xvfb-run -a npx electron test/features.js --no-sandbox --disable-gpu
 xvfb-run -a node test/security.js
 xvfb-run -a npx electron test/downloads.js --no-sandbox --disable-gpu
 xvfb-run -a npx electron test/pins.js --no-sandbox --disable-gpu
+xvfb-run -a node test/groups.js
 ```
 
 ## Shortcuts

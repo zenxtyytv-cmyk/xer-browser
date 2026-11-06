@@ -10,6 +10,7 @@ const actions = require('./actions');
 const widgets = require('./widgets');
 const downloads = require('./downloads');
 const { PinState } = require('./pins');
+const { GroupState, COLORS: GROUP_COLORS } = require('./groups');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -30,6 +31,9 @@ app.commandLine.appendSwitch('enable-features', 'DnsOverHttps');
 let win;
 const tabs = new Map(); // id -> BrowserView
 const pins = new PinState(); // pinned tab ids
+const groups = new GroupState(); // v0.7: tab groups
+// Final tab-bar order: pinned first, then tabs with group members kept adjacent.
+const orderedIds = () => { const all = pins.order([...tabs.keys()]); const np = all.filter(i => !pins.is(i)); return all.filter(i => pins.is(i)).concat(groups.order(np)); };
 let activeId = null;
 let nextId = 1;
 let sidebarOpen = false;
@@ -53,10 +57,11 @@ function pushTabs() {
   scheduleSessionSave();
   win.webContents.send('tabs', {
     activeId,
-    tabs: pins.order([...tabs.keys()]).map(id => {
+    groups: groups.list(),
+    tabs: orderedIds().map(id => {
       const v = tabs.get(id);
       return { id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL(),
-        pinned: pins.is(id), favicon: favicons.get(id) || '', loading: v.webContents.isLoading() };
+        pinned: pins.is(id), groupId: groups.groupOf(id), favicon: favicons.get(id) || '', loading: v.webContents.isLoading() };
     }),
     blocked: stats.blocked
   });
@@ -77,7 +82,8 @@ function newTab(url) {
   });
   tabs.set(id, view);
   const wc = view.webContents;
-  wc.setWindowOpenHandler(({ url }) => { newTab(url); return { action: 'deny' }; });
+  // A link that opens a new tab joins the opener's group (like Chrome/Edge); pinned openers don't group.
+  wc.setWindowOpenHandler(({ url }) => { const nid = newTab(url); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } return { action: 'deny' }; });
   ['page-title-updated', 'did-navigate', 'did-navigate-in-page', 'did-start-loading', 'did-stop-loading']
     .forEach(e => wc.on(e, pushTabs));
   // v0.5: favicon capture
@@ -123,10 +129,10 @@ function closeTab(id) {
     }
   } catch {}
   win.removeBrowserView(v); v.webContents.destroy(); tabs.delete(id);
-  pins.prune(tabs.keys()); favicons.delete(id);
+  pins.prune(tabs.keys()); groups.prune(tabs.keys()); favicons.delete(id);
   if (activeId === id) {
     activeId = null;
-    const next = pins.order([...tabs.keys()]).pop();
+    const next = orderedIds().pop();
     next ? switchTab(next) : newTab();
   } else pushTabs();
 }
@@ -141,18 +147,19 @@ function reopenClosedTab() {
 
 function duplicateTab(id) {
   const v = tabs.get(id); if (!v) return;
-  try { newTab(v.webContents.getURL()); } catch {}
+  try { const nid = newTab(v.webContents.getURL()); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } } catch {}
 }
 
 // v0.5: session restore (Firefox-style) — save open web tabs on quit, reopen on start
-// Session format v2: [{url, pinned}]. Older sessions (plain URL strings) still load.
+// Session format v3: [{url, pinned, group?: {key, name, color, collapsed}}]. Older sessions (plain URL strings) still load.
 let sessionTimer = null;
 let sessionAllowEmpty = false; // set true only when the user deliberately closes every tab
 let quitting = false;
 function saveSession() {
-  const rows = pins.order([...tabs.keys()]).map(id => {
+  const rows = orderedIds().map(id => {
     let url = ''; try { url = tabs.get(id).webContents.getURL(); } catch {}
-    return { url, pinned: pins.is(id) };
+    const g = groups.get(groups.groupOf(id));
+    return g ? { url, pinned: pins.is(id), group: { key: g.id, name: g.name, color: g.color, collapsed: g.collapsed } } : { url, pinned: pins.is(id) };
   }).filter(r => /^https?:/.test(r.url));
   // During shutdown the tabs may already be torn down. Never replace a good session with an empty one.
   if (!rows.length && !sessionAllowEmpty) return;
@@ -170,7 +177,16 @@ function restoreSession() {
   const norm = rows.map(r => typeof r === 'string' ? { url: r, pinned: false } : r)
     .filter(r => r && /^https?:/.test(r.url)).slice(0, 40);
   if (!norm.length) return false;
-  norm.forEach(r => { const id = newTab(r.url); if (r.pinned) pins.toggle(id); });
+  const gmap = new Map(); // saved group key -> live group id
+  norm.forEach(r => {
+    const id = newTab(r.url);
+    if (r.pinned) { pins.toggle(id); return; }
+    const g = r.group;
+    if (g && typeof g === 'object') {
+      if (!gmap.has(g.key)) { const gid = groups.create([id], g.name, g.color); if (g.collapsed) groups.toggleCollapsed(gid); gmap.set(g.key, gid); }
+      else groups.assign(id, gmap.get(g.key));
+    }
+  });
   pushTabs();
   return true;
 }
@@ -237,7 +253,20 @@ function setupIpc() {
   ipcMain.handle('tab:close', (_, id) => closeTab(id));
   ipcMain.handle('tab:reopen', () => reopenClosedTab());
   ipcMain.handle('tab:duplicate', (_, id) => duplicateTab(id));
-  ipcMain.handle('tab:pin', (_, id) => { if (!tabs.has(id)) return false; pins.toggle(id); pushTabs(); return pins.is(id); });
+  ipcMain.handle('tab:pin', (_, id) => { if (!tabs.has(id)) return false; pins.toggle(id); if (pins.is(id)) groups.remove(id); pushTabs(); return pins.is(id); });
+  // v0.7 tab groups. Pinned tabs cannot be grouped.
+  ipcMain.handle('group:create', (_, ids, name, color) => {
+    const valid = (Array.isArray(ids) ? ids : [ids]).filter(i => tabs.has(i) && !pins.is(i));
+    if (!valid.length) return null;
+    const gid = groups.create(valid, typeof name === 'string' ? name : '', color); pushTabs(); return gid;
+  });
+  ipcMain.handle('group:add', (_, tabId, gid) => { if (!tabs.has(tabId) || pins.is(tabId)) return false; const ok = groups.assign(tabId, gid); pushTabs(); return ok; });
+  ipcMain.handle('group:remove', (_, tabId) => { groups.remove(tabId); pushTabs(); return true; });
+  ipcMain.handle('group:rename', (_, gid, name) => { const ok = groups.rename(gid, typeof name === 'string' ? name : ''); pushTabs(); return ok; });
+  ipcMain.handle('group:color', (_, gid, color) => { const ok = groups.setColor(gid, color); pushTabs(); return ok; });
+  ipcMain.handle('group:toggle', (_, gid) => { const r = groups.toggleCollapsed(gid); pushTabs(); return r; });
+  ipcMain.handle('group:ungroup', (_, gid) => { groups.ungroup(gid); pushTabs(); return true; });
+  ipcMain.handle('group:close', (_, gid) => { for (const t of groups.members(gid)) closeTab(t); return true; });
   ipcMain.handle('nav:go', (_, url) => tabs.get(activeId)?.webContents.loadURL(normalize(url)));
   ipcMain.handle('nav:back', () => tabs.get(activeId)?.webContents.goBack());
   ipcMain.handle('nav:forward', () => tabs.get(activeId)?.webContents.goForward());
@@ -373,7 +402,7 @@ app.whenReady().then(() => {
       if (i.key === '=' || i.key === '+') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() + 0.5); e.preventDefault(); }
       if (i.key === '-') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() - 0.5); e.preventDefault(); }
       if (i.key === '0') { tabs.get(activeId)?.webContents.setZoomLevel(0); e.preventDefault(); }
-      if (i.key === 'Tab') { const ids = [...tabs.keys()]; switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
+      if (i.key === 'Tab') { const ids = orderedIds(); switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
       if (i.key === 'j' && !i.shift) { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
       if (i.shift && i.key.toLowerCase() === 'p') { win.webContents.send('shortcut', 'pin'); e.preventDefault(); }
       if (i.shift && i.key.toLowerCase() === 't') { reopenClosedTab(); e.preventDefault(); } // Ctrl+Shift+T

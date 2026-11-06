@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+- New: **Tab groups**. Right-click a tab > Add to new group; right-click the colored chip to rename, recolor (8 colors), collapse/expand, ungroup or close the group. Grouped tabs stay adjacent, collapsed groups hide their tabs (the active tab always stays visible), links opened from a grouped tab and duplicates join the same group, and pinning a tab removes it from its group.
+- Groups persist: name, color, collapsed state and membership are saved in the session (format v3; older sessions still load) and restored on the next launch.
+- Ctrl+Tab now follows the on-screen tab order, including groups.
+- New `src/main/groups.js` (pure logic) and `test/groups.js` (37 checks: unit tests plus a live app run with relaunch). `npm test` now runs 12 suites.
+
 ## 0.6.0
 - New: **Claude page actions with approval**. Claude can propose clicks, typing, scrolling and navigation; each action is shown as a card and only runs after you press Approve. Actions are re-validated in the main process, limited to the tab they were proposed for, capped at 8 per reply, and never touch password, card or identity fields. Works with Claude and local (Ollama) models.
 - Fixed: saving the API key no longer fails silently when OS encryption is unavailable (the error is now shown).
