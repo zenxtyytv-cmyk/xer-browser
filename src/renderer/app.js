@@ -45,6 +45,7 @@ xer.on('tabs', ({ tabs, activeId, blocked, groups = [] }) => {
     el.ondblclick = (e) => { e.stopPropagation(); xer.pinTab(t.id); };
     el.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); e.stopPropagation(); xer.closeTab(t.id); } };
     el.oncontextmenu = (e) => { e.preventDefault(); tabMenu(e, t); };
+    makeDraggable(el, t.id);
     frag.append(el);
     if (t.id === activeId && document.activeElement !== $('url') && !t.url.startsWith('file:')) $('url').value = t.url;
     if (t.id === activeId && t.url.startsWith('file:')) $('url').value = '';
@@ -52,6 +53,29 @@ xer.on('tabs', ({ tabs, activeId, blocked, groups = [] }) => {
   $('tabs').append(frag);
   $('shield').textContent = blocked + ' blocked';
 });
+
+// ---- drag-and-drop tab reordering ----
+// Drag a tab and drop it on the left half of another tab to go before it, or the right half to go after it.
+// Dropping on a pinned tab pins it, dropping next to a grouped tab joins that group (handled in main).
+let dragId = null;
+function dropSide(e, el) { const r = el.getBoundingClientRect(); return e.clientX > r.left + r.width / 2; }
+function clearDropMarks() { document.querySelectorAll('.drop-before,.drop-after').forEach(n => n.classList.remove('drop-before', 'drop-after')); }
+function makeDraggable(el, id) {
+  el.draggable = true;
+  el.ondragstart = (e) => { dragId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(id)); el.classList.add('dragging'); };
+  el.ondragend = () => { dragId = null; el.classList.remove('dragging'); clearDropMarks(); };
+  el.ondragover = (e) => {
+    if (dragId == null || dragId === id) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    clearDropMarks(); el.classList.add(dropSide(e, el) ? 'drop-after' : 'drop-before');
+  };
+  el.ondragleave = () => el.classList.remove('drop-before', 'drop-after');
+  el.ondrop = (e) => {
+    e.preventDefault();
+    const from = dragId; dragId = null; clearDropMarks();
+    if (from != null && from !== id) xer.moveTab(from, id, dropSide(e, el));
+  };
+}
 
 // ---- tab context menu ----
 const menu = $('tabmenu');

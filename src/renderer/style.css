@@ -86,3 +86,8 @@ button:hover{background:#34344d}
 #tabmenu .swatch{width:16px;height:16px;border-radius:50%;background:var(--gc);cursor:pointer;display:inline-block;border:2px solid transparent}
 #tabmenu .swatch.on{border-color:#fff}
 #tabmenu .gname{margin:4px 6px;padding:6px 8px;border-radius:6px;border:1px solid #34344d;background:#12121c;color:#fff;font-size:12px;outline:none}
+
+/* v0.8 drag-and-drop tab reordering */
+.tab.dragging{opacity:.4}
+.tab.drop-before{box-shadow:inset 3px 0 0 #7c8cff}
+.tab.drop-after{box-shadow:inset -3px 0 0 #7c8cff}

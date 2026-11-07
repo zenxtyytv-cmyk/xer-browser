@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+- New: **Drag-and-drop tab reordering**. Drag a tab and drop it on the left half of another tab to go before it, or the right half to go after it; a blue marker shows where it will land. Dropping onto a pinned tab pins it, dragging a pinned tab out among normal tabs unpins it, dropping next to a grouped tab joins that group, and dropping next to an ungrouped tab leaves its group.
+- Your custom order is saved with the session and restored on the next launch. Ctrl+Tab follows it.
+- Fixed: closing the active tab now focuses the tab that took its place (or the previous one if it was last) instead of always jumping to the last tab in the bar.
+- Duplicated tabs and links opened from a tab now land right next to the original instead of at the far end.
+- New `src/main/taborder.js` (pure logic), `test/taborder.js` (18 unit checks) and `test/reorder.js` (20 checks: live IPC, real DOM drag events, pin/group interaction, restart). `npm test` now runs 14 suites.
+
 ## 0.7.0
 - New: **Tab groups**. Right-click a tab > Add to new group; right-click the colored chip to rename, recolor (8 colors), collapse/expand, ungroup or close the group. Grouped tabs stay adjacent, collapsed groups hide their tabs (the active tab always stays visible), links opened from a grouped tab and duplicates join the same group, and pinning a tab removes it from its group.
 - Groups persist: name, color, collapsed state and membership are saved in the session (format v3; older sessions still load) and restored on the next launch.

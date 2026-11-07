@@ -11,6 +11,7 @@ const widgets = require('./widgets');
 const downloads = require('./downloads');
 const { PinState } = require('./pins');
 const { GroupState, COLORS: GROUP_COLORS } = require('./groups');
+const { TabOrder } = require('./taborder');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -32,8 +33,9 @@ let win;
 const tabs = new Map(); // id -> BrowserView
 const pins = new PinState(); // pinned tab ids
 const groups = new GroupState(); // v0.7: tab groups
+const order = new TabOrder(); // v0.8: user-controlled tab order (drag and drop)
 // Final tab-bar order: pinned first, then tabs with group members kept adjacent.
-const orderedIds = () => { const all = pins.order([...tabs.keys()]); const np = all.filter(i => !pins.is(i)); return all.filter(i => pins.is(i)).concat(groups.order(np)); };
+const orderedIds = () => { const all = pins.order(order.order([...tabs.keys()])); const np = all.filter(i => !pins.is(i)); return all.filter(i => pins.is(i)).concat(groups.order(np)); };
 let activeId = null;
 let nextId = 1;
 let sidebarOpen = false;
@@ -75,15 +77,16 @@ function normalize(input) {
   return 'https://duckduckgo.com/?q=' + encodeURIComponent(input);
 }
 
-function newTab(url) {
+function newTab(url, opts = {}) {
   const id = nextId++;
   const view = new BrowserView({
     webPreferences: { partition: 'persist:xer', contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, 'preload-internal.js') }
   });
   tabs.set(id, view);
+  if (opts.after != null && tabs.has(opts.after)) order.addAfter(id, opts.after); else order.add(id);
   const wc = view.webContents;
   // A link that opens a new tab joins the opener's group (like Chrome/Edge); pinned openers don't group.
-  wc.setWindowOpenHandler(({ url }) => { const nid = newTab(url); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } return { action: 'deny' }; });
+  wc.setWindowOpenHandler(({ url }) => { const nid = newTab(url, { after: id }); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } return { action: 'deny' }; });
   ['page-title-updated', 'did-navigate', 'did-navigate-in-page', 'did-start-loading', 'did-stop-loading']
     .forEach(e => wc.on(e, pushTabs));
   // v0.5: favicon capture
@@ -128,11 +131,14 @@ function closeTab(id) {
       if (closedStack.length > 25) closedStack.shift();
     }
   } catch {}
+  // Remember where the tab sat so focus lands on its neighbor (like every other browser), not the last tab.
+  const before = orderedIds(); const pos = before.indexOf(id);
   win.removeBrowserView(v); v.webContents.destroy(); tabs.delete(id);
-  pins.prune(tabs.keys()); groups.prune(tabs.keys()); favicons.delete(id);
+  order.remove(id); pins.prune(tabs.keys()); groups.prune(tabs.keys()); favicons.delete(id);
   if (activeId === id) {
     activeId = null;
-    const next = orderedIds().pop();
+    const after = orderedIds();
+    const next = after.length ? after[Math.min(pos, after.length - 1)] : null;
     next ? switchTab(next) : newTab();
   } else pushTabs();
 }
@@ -147,7 +153,7 @@ function reopenClosedTab() {
 
 function duplicateTab(id) {
   const v = tabs.get(id); if (!v) return;
-  try { const nid = newTab(v.webContents.getURL()); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } } catch {}
+  try { const nid = newTab(v.webContents.getURL(), { after: id }); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } } catch {}
 }
 
 // v0.5: session restore (Firefox-style) — save open web tabs on quit, reopen on start
@@ -253,6 +259,20 @@ function setupIpc() {
   ipcMain.handle('tab:close', (_, id) => closeTab(id));
   ipcMain.handle('tab:reopen', () => reopenClosedTab());
   ipcMain.handle('tab:duplicate', (_, id) => duplicateTab(id));
+  // v0.8 drag-and-drop reordering. Drop `id` before/after `targetId`.
+  // Crossing the pinned boundary pins/unpins; dropping next to a grouped tab joins that group; dropping next to an ungrouped tab leaves any group.
+  ipcMain.handle('tab:move', (_, id, targetId, after) => {
+    if (!tabs.has(id) || !tabs.has(targetId) || id === targetId) return false;
+    after = !!after;
+    if (pins.is(targetId) && !pins.is(id)) { pins.toggle(id); groups.remove(id); }
+    else if (!pins.is(targetId) && pins.is(id)) pins.unpin(id);
+    if (!pins.is(id)) {
+      const tg = groups.groupOf(targetId);
+      if (tg != null) groups.assign(id, tg); else groups.remove(id);
+    }
+    order.move(id, targetId, after);
+    pushTabs(); return true;
+  });
   ipcMain.handle('tab:pin', (_, id) => { if (!tabs.has(id)) return false; pins.toggle(id); if (pins.is(id)) groups.remove(id); pushTabs(); return pins.is(id); });
   // v0.7 tab groups. Pinned tabs cannot be grouped.
   ipcMain.handle('group:create', (_, ids, name, color) => {

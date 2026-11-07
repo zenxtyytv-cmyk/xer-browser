@@ -7,6 +7,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.
 - **Local AI**: use Ollama models on-device instead of Claude (Settings > AI assistant).
 - Tabs: double-click, right-click or Ctrl+Shift+P to pin; per-tab favicons; middle-click to close; right-click menu (Reload / Duplicate / Pin / Close / Reopen closed). URL/search bar (DuckDuckGo default).
+- **Drag-and-drop tabs**: drag a tab to reorder it. Drop on the left half of another tab to go before it, the right half to go after. Dropping onto a pinned tab pins it; dropping next to a grouped tab joins the group. Your order is remembered between launches.
 - **Tab groups**: right-click a tab > *Add to new group*, then right-click the colored group chip to rename, recolor (8 colors), collapse/expand, ungroup or close the whole group. Group tabs stay side by side, links opened from a grouped tab join its group, pinned tabs can't be grouped, and groups (name, color, collapsed state) come back after a restart.
 - **Reopen closed tab** (Ctrl+Shift+T): a 25-deep memory of closed web tabs.
 - **Session restore**: your open web tabs come back on the next launch.
@@ -72,9 +73,9 @@ npm run dist
 ```
 
 ## Roadmap
-Extension support, split tabs, multi-step action plans, drag-and-drop tab reordering.
+Extension support, split tabs, multi-step action plans.
 
-Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups.
+Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering.
 
 ## Testing
 ```
@@ -86,10 +87,12 @@ xvfb-run -a node test/security.js
 xvfb-run -a npx electron test/downloads.js --no-sandbox --disable-gpu
 xvfb-run -a npx electron test/pins.js --no-sandbox --disable-gpu
 xvfb-run -a node test/groups.js
+node test/taborder.js
+xvfb-run -a node test/reorder.js
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)
