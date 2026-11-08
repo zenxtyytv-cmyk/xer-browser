@@ -37,7 +37,7 @@ app.whenReady().then(async () => {
   const w = new BrowserWindow({ show: false, webPreferences: { preload: path.join(__dirname, '../src/main/preload-internal.js'), contextIsolation: true } });
   const widgets = require('../src/main/widgets'); const { ipcMain } = require('electron');
   const guardless = { 'dash:get': () => ({ ...widgets.get(), blocked: 7, bookmarks: [] }), 'dash:set': (d) => widgets.set(d), 'dash:reset': () => widgets.reset(),
-    'net:status': () => network.status(), 'ai:get': () => ({ provider: 'claude', ollamaUrl: 'http://127.0.0.1:11434', model: '' }), 'ai:set': () => ({}), 'ai:models': () => ({ ok: false, error: 'x' }) };
+    'net:status': () => network.status(), 'game:get': () => ({ cfg: { enabled: false, uncapFps: true, gpuDecode: true, lowLatency: true, keepAlive: true, blockPrompts: true, hideOverlayDefault: false }, active: false, overlay: false, restartNeeded: false }), 'game:set': () => ({}), 'ai:get': () => ({ provider: 'claude', ollamaUrl: 'http://127.0.0.1:11434', model: '' }), 'ai:set': () => ({}), 'ai:models': () => ({ ok: false, error: 'x' }) };
   for (const [k, f] of Object.entries(guardless)) ipcMain.handle(k, async (_, ...a) => f(...a));
   const errs = []; w.webContents.on('console-message', (e, l, m) => { if (l >= 3) errs.push(m); });
   await w.loadFile(path.join(__dirname, '../src/renderer/newtab.html')); await new Promise(r => setTimeout(r, 800));
@@ -52,6 +52,7 @@ app.whenReady().then(async () => {
   if (errs.length) console.log(errs);
   await w.loadFile(path.join(__dirname, '../src/renderer/settings.html')); await new Promise(r => setTimeout(r, 800));
   check('settings page renders', await w.webContents.executeJavaScript('!!document.querySelector("#plist") && document.querySelectorAll(".px").length >= 1'));
+  check('gaming settings section renders with saved values', await w.webContents.executeJavaScript('document.querySelector("#g_uncapFps") && document.querySelector("#g_uncapFps").checked === true && document.querySelector("#g_enabled").checked === false'));
   check('no settings errors', errs.length === 0);
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); app.exit(fails ? 1 : 0);
 });

@@ -22,6 +22,18 @@ select,input{width:100%;margin:4px 0 8px}.row{display:flex;gap:8px;align-items:c
 <label><input type="checkbox" id="doh" style="width:auto"> Encrypted DNS (DNS-over-HTTPS)</label>
 <small>Ad and tracker blocking is always on (Ghostery engine with EasyList and EasyPrivacy).</small></section>
 
+<section class="w"><h4>Gaming / Cloud gaming</h4>
+<small>Removes the browser's own bottlenecks so a cloud-gaming stream (GeForce NOW, Xbox Cloud Gaming, Luna, Shadow) is shown at its full rate with low latency. The stream's frame rate itself is set by the cloud server and your connection, so no browser can guarantee a specific number. Toggle Game Mode any time with Ctrl+Shift+G.</small>
+<label><input type="checkbox" id="g_enabled" style="width:auto"> Game Mode on at launch</label>
+<label><input type="checkbox" id="g_uncapFps" style="width:auto"> Uncap frame rate (no 60 fps vsync limit)</label>
+<label><input type="checkbox" id="g_gpuDecode" style="width:auto"> GPU video decode and rasterization</label>
+<label><input type="checkbox" id="g_lowLatency" style="width:auto"> Low-latency rendering</label>
+<label><input type="checkbox" id="g_keepAlive" style="width:auto"> Never throttle the game tab in the background</label>
+<label><input type="checkbox" id="g_blockPrompts" style="width:auto"> Don't show permission pop-ups while playing (unknown requests are denied)</label>
+<label><input type="checkbox" id="g_hideOverlayDefault" style="width:auto"> Hide the FPS counter by default</label>
+<div class="row"><button id="g_restart" hidden>Restart to apply</button><span id="g_note"></span></div>
+</section>
+
 <section class="w"><h4>AI assistant</h4>
 <label>Provider<select id="prov"><option value="claude">Claude (Anthropic API key)</option><option value="local">Local model (Ollama, runs on your device)</option></select></label>
 <div id="localbox">

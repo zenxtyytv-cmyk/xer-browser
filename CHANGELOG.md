@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0
+- **Game Mode** (Ctrl+Shift+G or the controller button in the toolbar): one switch for cloud gaming (GeForce NOW, Xbox Cloud Gaming, Luna, Shadow).
+  - Removes the browser's own limits: uncapped frame rate (no 60 fps vsync cap), GPU video decode and rasterization, low-latency rendering, and no throttling of the game tab when it is in the background.
+  - Live FPS and worst-frame-time counter on the game page.
+  - No permission pop-ups while playing: remembered answers still apply, unknown requests are denied quietly (never auto-granted).
+  - Settings > Gaming controls each option. Frame-rate and GPU options apply after a restart; Xer tells you when one is needed.
+  - Honest limits: the frame rate of a cloud stream is set by the cloud server and your connection. The browser can only avoid being the bottleneck. A fixed number such as 500 fps cannot be promised, and it needs a high-refresh monitor and a real GPU.
+  - Fixed an easy-to-miss trap: Chromium only honors the last `--enable-features`, so the gaming features are merged with DNS-over-HTTPS instead of silently replacing it.
+- New tests: gaming logic (23 checks) and a real-app Game Mode test.
+
 ## 0.8.0
 - New: **Drag-and-drop tab reordering**. Drag a tab and drop it on the left half of another tab to go before it, or the right half to go after it; a blue marker shows where it will land. Dropping onto a pinned tab pins it, dragging a pinned tab out among normal tabs unpins it, dropping next to a grouped tab joins that group, and dropping next to an ungrouped tab leaves its group.
 - Your custom order is saved with the session and restored on the next launch. Ctrl+Tab follows it.

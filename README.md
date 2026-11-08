@@ -3,6 +3,7 @@
 A privacy-first browser built on the Chromium engine (via Electron), with Claude as the built-in assistant.
 
 ## Features
+- **Game Mode** (Ctrl+Shift+G): cloud-gaming profile with uncapped frame rate, GPU decode, low latency, no background throttling, live FPS counter, and no permission pop-ups mid-game. See [Gaming](#gaming) for what it can and cannot do.
 - **Proxy / VPN manager** (Settings): route traffic through any SOCKS5/HTTP proxy, including VPN-provider proxy endpoints, Tor (`socks5://127.0.0.1:9050`), or a local WireGuard/OpenVPN SOCKS port. Xer does not run VPN servers itself.
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.
 - **Local AI**: use Ollama models on-device instead of Claude (Settings > AI assistant).
@@ -72,6 +73,14 @@ npm start
 npm run dist
 ```
 
+## Gaming
+Press **Ctrl+Shift+G** (or the controller button) to toggle Game Mode, and fine-tune it in Settings > Gaming.
+
+What it does: uncaps the browser's frame rate, turns on GPU video decode and rasterization, reduces render latency, keeps the game tab running at full speed in the background, shows an FPS counter, and stops permission pop-ups from interrupting play.
+
+What it cannot do: the frame rate of a cloud-gaming stream is decided by the cloud server and your internet connection. The browser can only make sure it is not the bottleneck, so no browser can guarantee a number like 500 fps. To get the most out of it you need a real GPU, a high-refresh monitor, and a wired or strong 5 GHz connection. Frame-rate and GPU options take effect after a restart.
+
+
 ## Roadmap
 Extension support, split tabs, multi-step action plans.
 
@@ -92,7 +101,7 @@ xvfb-run -a node test/reorder.js
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)

@@ -91,3 +91,6 @@ button:hover{background:#34344d}
 .tab.dragging{opacity:.4}
 .tab.drop-before{box-shadow:inset 3px 0 0 #7c8cff}
 .tab.drop-after{box-shadow:inset -3px 0 0 #7c8cff}
+
+#gameBtn.on{background:#1f8f5f;color:#fff}
+#gameToast{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:20;background:#1c1c28;border:1px solid #34344d;border-radius:10px;padding:8px 14px;font-size:12px;display:none}

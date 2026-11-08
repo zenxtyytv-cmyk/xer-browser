@@ -8,6 +8,7 @@ run() { name="$1"; shift; total=$((total+1)); out=$(timeout 180 $RUN "$@" 2>&1);
   p=$(echo "$out" | grep -c '^PASS'); f=$(echo "$out" | grep -c '^FAIL')
   if [ $code -ne 0 ] || [ $f -gt 0 ]; then echo "FAIL  $name  (pass=$p fail=$f exit=$code)"; echo "$out" | grep '^FAIL' | head -5; fail=$((fail+1)); else echo "ok    $name  ($p checks)"; fi; }
 run suggest   node test/suggest.js
+run gaming    node test/gaming.js
 run store     $ELEC test/store.js $FLAGS
 run smoke     $ELEC test/smoke.js $FLAGS
 run features  $ELEC test/features.js $FLAGS
@@ -21,5 +22,7 @@ run session   node test/session.js
 run groups    node test/groups.js
 run taborder  node test/taborder.js
 run reorder   node test/reorder.js
+run gamemode  node test/gamemode.js
+
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"
 exit $fail

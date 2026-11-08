@@ -304,3 +304,20 @@ document.querySelectorAll('#quick button').forEach(b => b.onclick = () => { $('w
 // ---- reader mode ----
 $('readerBtn').onclick = async () => { const r = await xer.readerOpen(); if (!r.ok) alert(r.error); };
 $('gear').onclick = () => xer.openSettings();
+
+// ---- Game Mode ----
+let toastT = null;
+function toast(msg) { const t = $('gameToast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3500); }
+function paintGame(st) {
+  $('gameBtn').classList.toggle('on', !!st.active);
+  $('gameBtn').title = 'Game Mode: ' + (st.active ? 'ON' : 'off') + ' (Ctrl+Shift+G)';
+}
+xer.game.get().then(paintGame).catch(() => {}); // Game Mode state is optional; never break page load
+xer.on('game:state', (st) => {
+  paintGame(st);
+  if (st.restartNeeded) toast('Restart Xer to apply frame-rate and GPU changes (Settings > Gaming).');
+  else toast(st.active ? 'Game Mode ON' : 'Game Mode off');
+});
+xer.on('game:denied', ({ host, perm }) => toast('Blocked ' + perm + ' request from ' + host + ' (Game Mode)'));
+$('gameBtn').onclick = () => xer.game.toggle().catch(() => toast('Game Mode is unavailable right now.'));
+xer.on('shortcut', (s) => { if (s === 'game') xer.game.toggle().catch(() => {}); });

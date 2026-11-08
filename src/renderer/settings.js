@@ -38,3 +38,15 @@ $('#ourl').onchange = async (e) => { await X.ai.set({ ollamaUrl: e.target.value.
 $('#omodel').onchange = (e) => X.ai.set({ model: e.target.value });
 $('#orefresh').onclick = drawAI;
 drawNet(); drawAI();
+
+// ---- Gaming ----
+const GKEYS = ['enabled', 'uncapFps', 'gpuDecode', 'lowLatency', 'keepAlive', 'blockPrompts', 'hideOverlayDefault'];
+async function drawGame() {
+  let st; try { st = await X.game.get(); } catch { return; }
+  GKEYS.forEach(k => { $('#g_' + k).checked = !!st.cfg[k]; });
+  $('#g_restart').hidden = !st.restartNeeded;
+  $('#g_note').textContent = st.restartNeeded ? 'Restart needed for frame-rate and GPU changes.' : '';
+}
+GKEYS.forEach(k => $('#g_' + k).onchange = async (e) => { try { await X.game.set({ [k]: e.target.checked }); } catch {} drawGame(); });
+$('#g_restart').onclick = () => X.game.restart();
+drawGame();

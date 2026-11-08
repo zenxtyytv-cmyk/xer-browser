@@ -3,6 +3,7 @@ const path = require('path');
 const { isBlocked } = require('./blocklist');
 const claude = require('./claude');
 const store = require('./store');
+const gaming = require('./gaming');
 const { suggest: suggestRank } = require('./suggest');
 const network = require('./network');
 const localai = require('./localai');
@@ -27,7 +28,22 @@ let bookmarks = [], history = [], sitePerms = {};
   ['no-pings'], ['metrics-recording-only'], ['no-default-browser-check'],
   ['disable-features', 'InterestFeedContentSuggestions,OptimizationHints,Translate,MediaRouter,FederatedLearningOfCohortsAPI,InterestCohortAPI,AttributionReportingCrossAppWeb'],
 ].forEach(([k, v]) => app.commandLine.appendSwitch(k, v));
-app.commandLine.appendSwitch('enable-features', 'DnsOverHttps');
+// Gaming profile is read from disk synchronously BEFORE app is ready (switches can't change later).
+let gameCfg = gaming.normalize(null);
+try {
+  const fsEarly = require('fs'), pEarly = require('path');
+  gameCfg = gaming.normalize(JSON.parse(fsEarly.readFileSync(pEarly.join(app.getPath('userData'), 'gaming.json'), 'utf8')));
+} catch {}
+{
+  let feats = 'DnsOverHttps';
+  for (const [k, v] of gaming.switches(gameCfg)) {
+    if (k === 'enable-features') feats = gaming.mergeFeatureSwitches(feats, v);   // merge, never override
+    else if (v === undefined) app.commandLine.appendSwitch(k); else app.commandLine.appendSwitch(k, v);
+  }
+  app.commandLine.appendSwitch('enable-features', feats);
+}
+let gameMode = !!gameCfg.enabled; // live state; Ctrl+Shift+G toggles overlay/prompt behavior instantly
+
 
 let win;
 const tabs = new Map(); // id -> BrowserView
@@ -80,7 +96,7 @@ function normalize(input) {
 function newTab(url, opts = {}) {
   const id = nextId++;
   const view = new BrowserView({
-    webPreferences: { partition: 'persist:xer', contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, 'preload-internal.js') }
+    webPreferences: { partition: 'persist:xer', contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, 'preload-internal.js'), backgroundThrottling: !gameCfg.keepAlive }
   });
   tabs.set(id, view);
   if (opts.after != null && tabs.has(opts.after)) order.addAfter(id, opts.after); else order.add(id);
@@ -94,6 +110,7 @@ function newTab(url, opts = {}) {
     if (urls && urls.length) { favicons.set(id, urls[0]); pushTabs(); }
   });
   // Auto-upgrade http -> https
+  wc.on('did-finish-load', () => { if (gameMode && !gameCfg.hideOverlayDefault && id === activeId && /^https?:/.test(wc.getURL())) { wc.executeJavaScript(gaming.overlayScript()).catch(() => {}); } });
   wc.on('did-navigate', (_, u) => {
     if (!/^https?:/i.test(u)) return; // only real web pages, not reader/error/data pages
     history.unshift({ url: u, title: wc.getTitle(), t: Date.now() });
@@ -117,6 +134,7 @@ function switchTab(id) {
   if (!tabs.has(id)) return;
   if (activeId && tabs.get(activeId)) win.removeBrowserView(tabs.get(activeId));
   activeId = id;
+  if (gameMode && !gameCfg.hideOverlayDefault) { const w2 = tabs.get(id)?.webContents; if (w2 && /^https?:/.test(w2.getURL())) w2.executeJavaScript(gaming.overlayScript()).catch(() => {}); }
   win.addBrowserView(tabs.get(id));
   layout(); pushTabs();
 }
@@ -233,6 +251,8 @@ function setupPrivacy() {
     let host = ''; try { host = new URL(wc.getURL()).hostname; } catch {}
     const key = host + '|' + perm;
     if (key in sitePerms) return cb(sitePerms[key]);
+    // Game Mode: a modal dialog would steal focus mid-game. Deny unknown requests quietly (never auto-grant).
+    if (gameMode && gameCfg.blockPrompts) { try { win.webContents.send('game:denied', { host, perm }); } catch {} return cb(false); }
     const { dialog } = require('electron');
     dialog.showMessageBox(win, { type: 'question', buttons: ['Allow', 'Block'], defaultId: 1, cancelId: 1,
       message: `${host} wants permission: ${perm}`, checkboxLabel: 'Remember my choice', checkboxChecked: true })
@@ -350,6 +370,42 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
     } catch { return false; }
   };
   const guard = (fn) => (e, ...a) => { if (!internal(e)) throw new Error('forbidden'); return fn(...a); };
+  // ---- Gaming / Game Mode ----
+  const gamingFile = () => path.join(app.getPath('userData'), 'gaming.json');
+  const overlayOn = new Set(); // tab ids with the FPS overlay running
+  async function setOverlay(on) {
+    const wc = tabs.get(activeId)?.webContents; if (!wc) return false;
+    try {
+      await wc.executeJavaScript(on ? gaming.overlayScript() : gaming.overlayOffScript());
+      on ? overlayOn.add(activeId) : overlayOn.delete(activeId);
+      return on;
+    } catch { return false; }
+  }
+  function gameState() { return { cfg: gameCfg, active: gameMode, overlay: overlayOn.has(activeId), restartNeeded: gameRestartNeeded }; }
+  let gameRestartNeeded = false;
+  ipcMain.handle('game:get', guard(() => gameState()));
+  ipcMain.handle('game:set', guard((patch) => {
+    const before = gameCfg;
+    const next = gaming.normalize({ ...gameCfg, ...(patch || {}) });
+    if (gaming.needsRestart(before, next)) gameRestartNeeded = true;
+    gameCfg = next; store.save('gaming', gameCfg);
+    try { require('fs').writeFileSync(gamingFile(), JSON.stringify(gameCfg)); } catch {}   // read synchronously at next startup
+    if ('enabled' in (patch || {})) gameMode = gameCfg.enabled;
+    win.webContents.send('game:state', gameState());
+    return gameState();
+  }));
+  ipcMain.handle('game:toggle', guard(async () => {
+    gameMode = !gameMode;
+    const next = gaming.normalize({ ...gameCfg, enabled: gameMode });
+    if (gaming.needsRestart(gameCfg, next)) gameRestartNeeded = true;
+    gameCfg = next; try { require('fs').writeFileSync(gamingFile(), JSON.stringify(gameCfg)); } catch {}
+    store.save('gaming', gameCfg);
+    await setOverlay(gameMode && !gameCfg.hideOverlayDefault);
+    win.webContents.send('game:state', gameState());
+    return gameState();
+  }));
+  ipcMain.handle('game:overlay', guard(async () => { await setOverlay(!overlayOn.has(activeId)); win.webContents.send('game:state', gameState()); return gameState(); }));
+  ipcMain.handle('game:restart', guard(() => { app.relaunch(); app.exit(0); }));
   ipcMain.handle('net:status', guard(() => network.status()));
   ipcMain.handle('net:add', guard((p) => network.addProxy(p)));
   ipcMain.handle('net:remove', guard((id) => network.removeProxy(id)));
@@ -402,7 +458,7 @@ app.whenReady().then(() => {
   network.init().catch(e => console.log('[xer] network init', e.message));
   win = new BrowserWindow({
     width: 1280, height: 820, title: 'Xer Browser', backgroundColor: '#0b0b10',
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: false }
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: false, backgroundThrottling: !gameCfg.keepAlive }
   });
   Menu.setApplicationMenu(null);
   win.loadFile(path.join(__dirname, '../renderer/index.html'));
@@ -423,6 +479,7 @@ app.whenReady().then(() => {
       if (i.key === '-') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() - 0.5); e.preventDefault(); }
       if (i.key === '0') { tabs.get(activeId)?.webContents.setZoomLevel(0); e.preventDefault(); }
       if (i.key === 'Tab') { const ids = orderedIds(); switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
+      if (i.shift && i.key.toLowerCase() === 'g') { win.webContents.send('shortcut', 'game'); e.preventDefault(); }
       if (i.key === 'j' && !i.shift) { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
       if (i.shift && i.key.toLowerCase() === 'p') { win.webContents.send('shortcut', 'pin'); e.preventDefault(); }
       if (i.shift && i.key.toLowerCase() === 't') { reopenClosedTab(); e.preventDefault(); } // Ctrl+Shift+T
