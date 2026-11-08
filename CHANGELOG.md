@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0
+- **Split view** (Ctrl+Shift+S, the split button in the toolbar, or right-click a tab > Split view with next tab): show two tabs side by side.
+  - Pairs the active tab with the next one in the tab bar (or the previous one if it is the last).
+  - Clicking either tab moves focus between the panes without ending the split; switching to any other tab, closing a pane's tab, or toggling again ends it, and the focused pane stays on screen full width.
+  - Split button menu: 50/50, 70/30, 30/70, swap sides, close split. Ratios are clamped to 20 to 80 percent so neither pane can be squeezed away.
+  - Both panes keep their own page, history, and zoom. Tabs in the split are underlined in the tab bar.
+- New tests: split logic (19 checks) and a live split test that measures real page widths in the running app.
+
 ## 0.9.0
 - **Game Mode** (Ctrl+Shift+G or the controller button in the toolbar): one switch for cloud gaming (GeForce NOW, Xbox Cloud Gaming, Luna, Shadow).
   - Removes the browser's own limits: uncapped frame rate (no 60 fps vsync cap), GPU video decode and rasterization, low-latency rendering, and no throttling of the game tab when it is in the background.

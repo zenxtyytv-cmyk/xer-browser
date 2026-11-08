@@ -23,6 +23,8 @@ run groups    node test/groups.js
 run taborder  node test/taborder.js
 run reorder   node test/reorder.js
 run gamemode  node test/gamemode.js
+run split     node test/split.js
+run splitlive node test/splitlive.js
 
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"
 exit $fail

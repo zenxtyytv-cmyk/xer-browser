@@ -3,8 +3,11 @@ const history = [];
 let activeTabId = null;
 
 let lastGroups = [];
-xer.on('tabs', ({ tabs, activeId, blocked, groups = [] }) => {
+let lastSplit = null;
+xer.on('tabs', ({ tabs, activeId, blocked, groups = [], split = null }) => {
   activeTabId = activeId;
+  lastSplit = split;
+  const sb = $('splitBtn'); if (sb) { sb.classList.toggle('on', !!split); sb.title = split ? 'Split view on: click for options (Ctrl+Shift+S)' : 'Split view (Ctrl+Shift+S)'; }
   lastGroups = groups;
   const gmap = new Map(groups.map(g => [g.id, g]));
   $('tabs').innerHTML = '';
@@ -26,7 +29,7 @@ xer.on('tabs', ({ tabs, activeId, blocked, groups = [] }) => {
     // Collapsed groups hide their tabs, except the active one so you never lose sight of where you are.
     if (g && g.collapsed && t.id !== activeId) return;
     const el = document.createElement('div');
-    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '') + (t.loading ? ' loading' : '') + (g ? ' ingroup g-' + g.color : '');
+    el.className = 'tab' + (t.id === activeId ? ' active' : '') + (t.pinned ? ' pinned' : '') + (t.loading ? ' loading' : '') + (split && (t.id === split.left || t.id === split.right) ? ' insplit' : '') + (g ? ' ingroup g-' + g.color : '');
     if (t.favicon) { const img = document.createElement('img'); img.className = 'fav'; img.src = t.favicon; el.append(img); }
     const s = document.createElement('span'); s.textContent = t.title;
     if (t.pinned) {
@@ -94,6 +97,7 @@ function tabMenu(e, t) {
       lastGroups.filter(g => g.id !== t.groupId).forEach(g => mk('Move to group: ' + (g.name || 'Group ' + g.id), () => xer.addToGroup(t.id, g.id)));
     }
   }
+  mk(lastSplit ? 'Close split view' : 'Split view with next tab', () => { xer.split.toggle(); });
   mk('Close tab', () => xer.closeTab(t.id));
   mk('Reopen closed tab (Ctrl+Shift+T)', () => xer.reopenTab());
   menu.hidden = false;
@@ -321,3 +325,20 @@ xer.on('game:state', (st) => {
 xer.on('game:denied', ({ host, perm }) => toast('Blocked ' + perm + ' request from ' + host + ' (Game Mode)'));
 $('gameBtn').onclick = () => xer.game.toggle().catch(() => toast('Game Mode is unavailable right now.'));
 xer.on('shortcut', (s) => { if (s === 'game') xer.game.toggle().catch(() => {}); });
+
+// Split view: the toolbar button toggles it; when it is on, the button opens a small menu of layouts.
+function splitMenu(e) {
+  menu.innerHTML = '';
+  const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onmousedown = (ev) => { ev.preventDefault(); hideMenu(); fn(); }; menu.append(b); };
+  mk('50 / 50', () => xer.split.ratio(0.5));
+  mk('70 / 30', () => xer.split.ratio(0.7));
+  mk('30 / 70', () => xer.split.ratio(0.3));
+  mk('Swap sides', () => xer.split.swap());
+  mk('Close split view', () => xer.split.toggle());
+  menu.hidden = false;
+  const r = e.currentTarget.getBoundingClientRect();
+  menu.style.left = Math.min(r.left, innerWidth - 240) + 'px';
+  menu.style.top = (r.bottom + 4) + 'px';
+}
+if ($('splitBtn')) $('splitBtn').onclick = (e) => { if (lastSplit) splitMenu(e); else xer.split.toggle().catch(() => {}); };
+xer.on('shortcut', (s) => { if (s === 'split') xer.split.toggle().catch(() => {}); });

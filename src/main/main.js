@@ -12,6 +12,7 @@ const widgets = require('./widgets');
 const downloads = require('./downloads');
 const { PinState } = require('./pins');
 const { GroupState, COLORS: GROUP_COLORS } = require('./groups');
+const { SplitState } = require('./split');
 const { TabOrder } = require('./taborder');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
@@ -49,6 +50,7 @@ let win;
 const tabs = new Map(); // id -> BrowserView
 const pins = new PinState(); // pinned tab ids
 const groups = new GroupState(); // v0.7: tab groups
+const split = new SplitState(); // v1.0: split view (two tabs side by side)
 const order = new TabOrder(); // v0.8: user-controlled tab order (drag and drop)
 // Final tab-bar order: pinned first, then tabs with group members kept adjacent.
 const orderedIds = () => { const all = pins.order(order.order([...tabs.keys()])); const np = all.filter(i => !pins.is(i)); return all.filter(i => pins.is(i)).concat(groups.order(np)); };
@@ -66,9 +68,15 @@ const closedStack = []; // [{url, title}] most-recent-last
 function layout() {
   if (!win) return;
   const [w, h] = win.getContentSize();
-  const view = tabs.get(activeId);
-  if (view) view.setBounds({ x: 0, y: TOOLBAR_H, width: w - (sidebarOpen ? SIDEBAR_W : 0), height: h - TOOLBAR_H });
-  win.webContents.send('layout', { sidebarOpen, sidebarW: SIDEBAR_W });
+  const area = { x: 0, y: TOOLBAR_H, width: w - (sidebarOpen ? SIDEBAR_W : 0), height: h - TOOLBAR_H };
+  if (split.active && tabs.has(split.left) && tabs.has(split.right)) {
+    const b = split.bounds(area);
+    tabs.get(split.left).setBounds(b.left); tabs.get(split.right).setBounds(b.right);
+  } else {
+    const view = tabs.get(activeId);
+    if (view) view.setBounds(area);
+  }
+  win.webContents.send('layout', { sidebarOpen, sidebarW: SIDEBAR_W, split: split.toJSON(), area });
 }
 
 function pushTabs() {
@@ -76,6 +84,7 @@ function pushTabs() {
   win.webContents.send('tabs', {
     activeId,
     groups: groups.list(),
+    split: split.toJSON(),
     tabs: orderedIds().map(id => {
       const v = tabs.get(id);
       return { id, title: v.webContents.getTitle() || 'New Tab', url: v.webContents.getURL(),
@@ -130,8 +139,20 @@ function newTab(url, opts = {}) {
   return id;
 }
 
+function leaveSplit() {
+  if (!split.active) return;
+  const other = [split.left, split.right].filter(i => i !== activeId);
+  split.close();
+  other.forEach(i => { const v = tabs.get(i); if (v) try { win.removeBrowserView(v); } catch {} });
+}
+
 function switchTab(id) {
   if (!tabs.has(id)) return;
+  // Clicking a tab that is part of the split just moves focus between the panes.
+  if (split.has(id) && split.has(activeId)) {
+    split.setFocus(id); activeId = id; layout(); pushTabs(); return;
+  }
+  if (split.active && !split.has(id)) leaveSplit();
   if (activeId && tabs.get(activeId)) win.removeBrowserView(tabs.get(activeId));
   activeId = id;
   if (gameMode && !gameCfg.hideOverlayDefault) { const w2 = tabs.get(id)?.webContents; if (w2 && /^https?:/.test(w2.getURL())) w2.executeJavaScript(gaming.overlayScript()).catch(() => {}); }
@@ -151,7 +172,9 @@ function closeTab(id) {
   } catch {}
   // Remember where the tab sat so focus lands on its neighbor (like every other browser), not the last tab.
   const before = orderedIds(); const pos = before.indexOf(id);
+  const survivor = split.remove(id);
   win.removeBrowserView(v); v.webContents.destroy(); tabs.delete(id);
+  if (survivor != null && tabs.has(survivor)) { activeId = survivor; layout(); }
   order.remove(id); pins.prune(tabs.keys()); groups.prune(tabs.keys()); favicons.delete(id);
   if (activeId === id) {
     activeId = null;
@@ -159,6 +182,21 @@ function closeTab(id) {
     const next = after.length ? after[Math.min(pos, after.length - 1)] : null;
     next ? switchTab(next) : newTab();
   } else pushTabs();
+}
+
+function toggleSplit(id = activeId) {
+  if (split.active) { // un-split: keep the focused pane, hide the other
+    const keep = split.focusedId() ?? activeId;
+    [split.left, split.right].forEach(i => { const v = tabs.get(i); if (v) try { win.removeBrowserView(v); } catch {} });
+    split.close(); activeId = keep;
+    if (tabs.has(keep)) win.addBrowserView(tabs.get(keep));
+    layout(); pushTabs(); return false;
+  }
+  const partner = SplitState.pickPartner(id, orderedIds());
+  if (partner == null) return false; // need a second tab to split with
+  split.open(id, partner);
+  win.addBrowserView(tabs.get(id)); win.addBrowserView(tabs.get(partner));
+  activeId = id; layout(); pushTabs(); return true;
 }
 
 function reopenClosedTab() {
@@ -278,6 +316,10 @@ function setupIpc() {
   ipcMain.handle('tab:switch', (_, id) => switchTab(id));
   ipcMain.handle('tab:close', (_, id) => closeTab(id));
   ipcMain.handle('tab:reopen', () => reopenClosedTab());
+  ipcMain.handle('split:toggle', () => toggleSplit());
+  ipcMain.handle('split:ratio', (_, r) => { if (!split.active || !split.setRatio(r)) return false; layout(); return split.ratio; });
+  ipcMain.handle('split:swap', () => { if (!split.swap()) return false; layout(); pushTabs(); return true; });
+  ipcMain.handle('split:get', () => split.toJSON());
   ipcMain.handle('tab:duplicate', (_, id) => duplicateTab(id));
   // v0.8 drag-and-drop reordering. Drop `id` before/after `targetId`.
   // Crossing the pinned boundary pins/unpins; dropping next to a grouped tab joins that group; dropping next to an ungrouped tab leaves any group.
@@ -479,6 +521,7 @@ app.whenReady().then(() => {
       if (i.key === '-') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() - 0.5); e.preventDefault(); }
       if (i.key === '0') { tabs.get(activeId)?.webContents.setZoomLevel(0); e.preventDefault(); }
       if (i.key === 'Tab') { const ids = orderedIds(); switchTab(ids[(ids.indexOf(activeId) + 1) % ids.length]); e.preventDefault(); }
+      if (i.shift && i.key.toLowerCase() === 's') { toggleSplit(); e.preventDefault(); } // Ctrl+Shift+S
       if (i.shift && i.key.toLowerCase() === 'g') { win.webContents.send('shortcut', 'game'); e.preventDefault(); }
       if (i.key === 'j' && !i.shift) { win.webContents.send('toggle-sidebar'); e.preventDefault(); }
       if (i.shift && i.key.toLowerCase() === 'p') { win.webContents.send('shortcut', 'pin'); e.preventDefault(); }

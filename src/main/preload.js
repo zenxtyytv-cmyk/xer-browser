@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('xer', {
   bookmarks: inv('bm:list'), toggleBookmark: inv('bm:toggle'), history: inv('hist:list'), clearHistory: inv('hist:clear'),
   downloads: inv('dl:list'), clearDownloads: inv('dl:clear'), openDownload: inv('dl:open'), showDownload: inv('dl:show'), cancelDownload: inv('dl:cancel'),
   find: inv('find'), zoom: inv('zoom'), devtools: inv('devtools'), resetPerms: inv('perms:reset'),
+  split: { toggle: inv('split:toggle'), ratio: inv('split:ratio'), swap: inv('split:swap'), get: inv('split:get') },
   game: { get: inv('game:get'), set: inv('game:set'), toggle: inv('game:toggle'), overlay: inv('game:overlay'), restart: inv('game:restart') },
   readerOpen: inv('reader:open'),
   openSettings: inv('open:settings'), ai: { get: inv('ai:get'), set: inv('ai:set'), models: inv('ai:models') },
