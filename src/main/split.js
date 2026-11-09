@@ -1,5 +1,5 @@
 // Split view: show two tabs side by side. Pure state + geometry, no Electron deps, so it is unit-testable.
-const MIN = 0.2, MAX = 0.8, GAP = 4;
+const MIN = 0.2, MAX = 0.8, GAP = 8; // GAP is the draggable divider strip between the panes
 
 class SplitState {
   constructor() { this.left = null; this.right = null; this.ratio = 0.5; this.focus = 'left'; }
@@ -36,6 +36,15 @@ class SplitState {
       right: { x: x + lw + GAP, y, width: usable - lw, height },
     };
   }
+  // Ratio that puts the divider's centre under pointer x (window coordinates), clamped to MIN..MAX.
+  // Returns null for junk input or an area too small to split.
+  static ratioFromX(x, area) {
+    x = Number(x); if (!Number.isFinite(x) || !area || !(area.width > GAP)) return null;
+    const usable = area.width - GAP;
+    return Math.min(MAX, Math.max(MIN, (x - area.x - GAP / 2) / usable));
+  }
+  // Divider rectangle (the gap between the panes) for hit-testing and drawing.
+  divider(area) { const b = this.bounds(area); const x = b.left.x + b.left.width; return { x, y: area.y, width: GAP, height: area.height }; }
   toJSON() { return this.active ? { left: this.left, right: this.right, ratio: this.ratio } : null; }
 }
 

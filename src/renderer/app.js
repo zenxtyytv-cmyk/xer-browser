@@ -342,3 +342,26 @@ function splitMenu(e) {
 }
 if ($('splitBtn')) $('splitBtn').onclick = (e) => { if (lastSplit) splitMenu(e); else xer.split.toggle().catch(() => {}); };
 xer.on('shortcut', (s) => { if (s === 'split') xer.split.toggle().catch(() => {}); });
+
+// Draggable split divider: a strip in the gap between the two panes. Pointer capture keeps the drag alive even
+// when the cursor crosses a page view. Double-click resets to 50/50.
+const GAP_PX = 8;
+const divider = $('splitDivider');
+xer.on('layout', ({ split, area }) => {
+  if (!divider) return;
+  if (!split || !area) { divider.hidden = true; return; }
+  const usable = Math.max(0, area.width - GAP_PX), lw = Math.round(usable * split.ratio);
+  Object.assign(divider.style, { left: (area.x + lw) + 'px', top: area.y + 'px', width: GAP_PX + 'px', height: area.height + 'px' });
+  divider.hidden = false;
+});
+if (divider) {
+  let busy = false;
+  divider.addEventListener('pointerdown', (e) => { try { divider.setPointerCapture(e.pointerId); } catch {} divider.classList.add('drag'); e.preventDefault(); }); // capture is best-effort
+  divider.addEventListener('pointermove', (e) => {
+    if (!divider.classList.contains('drag') || busy) return;
+    busy = true; xer.split.drag(e.clientX).catch(() => {}).finally(() => { busy = false; });
+  });
+  const end = (e) => { if (divider.classList.contains('drag') && e.type === 'pointerup') xer.split.drag(e.clientX).catch(() => {}); divider.classList.remove('drag'); try { divider.releasePointerCapture(e.pointerId); } catch {} };
+  divider.addEventListener('pointerup', end); divider.addEventListener('pointercancel', end);
+  divider.addEventListener('dblclick', () => xer.split.ratio(0.5).catch(() => {}));
+}

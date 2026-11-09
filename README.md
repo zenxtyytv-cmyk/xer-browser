@@ -3,7 +3,7 @@
 A privacy-first browser built on the Chromium engine (via Electron), with Claude as the built-in assistant.
 
 ## Features
-- **Split view** (Ctrl+Shift+S): two tabs side by side with 50/50, 70/30 and 30/70 layouts and a swap button.
+- **Split view** (Ctrl+Shift+S): two tabs side by side with a draggable divider (double-click to reset), 50/50, 70/30 and 30/70 presets, and a swap button.
 - **Game Mode** (Ctrl+Shift+G): cloud-gaming profile with uncapped frame rate, GPU decode, low latency, no background throttling, live FPS counter, and no permission pop-ups mid-game. See [Gaming](#gaming) for what it can and cannot do.
 - **Proxy / VPN manager** (Settings): route traffic through any SOCKS5/HTTP proxy, including VPN-provider proxy endpoints, Tor (`socks5://127.0.0.1:9050`), or a local WireGuard/OpenVPN SOCKS port. Xer does not run VPN servers itself.
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.
@@ -83,9 +83,9 @@ What it cannot do: the frame rate of a cloud-gaming stream is decided by the clo
 
 
 ## Roadmap
-Extension support, multi-step action plans, draggable split divider.
+Extension support, multi-step action plans.
 
-Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view.
+Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider.
 
 ## Testing
 ```
@@ -104,7 +104,7 @@ xvfb-run -a node test/splitlive.js
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+S split view, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+S split view, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder. Drag the divider between split panes to resize.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)

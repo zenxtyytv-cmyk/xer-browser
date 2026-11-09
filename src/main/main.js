@@ -65,10 +65,15 @@ const stats = { blocked: 0 };
 const favicons = new Map(); // id -> favicon url
 const closedStack = []; // [{url, title}] most-recent-last
 
+// The rectangle available to web pages (below the toolbar, left of the sidebar). One definition, used by layout and divider drag.
+function contentArea() {
+  const [w, h] = win.getContentSize();
+  return { x: 0, y: TOOLBAR_H, width: w - (sidebarOpen ? SIDEBAR_W : 0), height: h - TOOLBAR_H };
+}
+
 function layout() {
   if (!win) return;
-  const [w, h] = win.getContentSize();
-  const area = { x: 0, y: TOOLBAR_H, width: w - (sidebarOpen ? SIDEBAR_W : 0), height: h - TOOLBAR_H };
+  const area = contentArea();
   if (split.active && tabs.has(split.left) && tabs.has(split.right)) {
     const b = split.bounds(area);
     tabs.get(split.left).setBounds(b.left); tabs.get(split.right).setBounds(b.right);
@@ -320,6 +325,13 @@ function setupIpc() {
   ipcMain.handle('split:ratio', (_, r) => { if (!split.active || !split.setRatio(r)) return false; layout(); return split.ratio; });
   ipcMain.handle('split:swap', () => { if (!split.swap()) return false; layout(); pushTabs(); return true; });
   ipcMain.handle('split:get', () => split.toJSON());
+  // Draggable divider: the renderer reports the pointer x while dragging; we turn it into a ratio.
+  ipcMain.handle('split:drag', (_, x) => {
+    if (!split.active) return false;
+    const r = SplitState.ratioFromX(x, contentArea());
+    if (r == null || !split.setRatio(r)) return false;
+    layout(); return split.ratio;
+  });
   ipcMain.handle('tab:duplicate', (_, id) => duplicateTab(id));
   // v0.8 drag-and-drop reordering. Drop `id` before/after `targetId`.
   // Crossing the pinned boundary pins/unpins; dropping next to a grouped tab joins that group; dropping next to an ungrouped tab leaves any group.

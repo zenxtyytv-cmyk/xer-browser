@@ -1,7 +1,7 @@
 {
   "name": "xer-browser",
   "productName": "Xer Browser",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Privacy-first Chromium-based browser with built-in Claude assistant",
   "main": "src/main/main.js",
   "scripts": {

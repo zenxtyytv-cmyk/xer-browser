@@ -54,6 +54,26 @@ const widths = async () => {
     const clamp = await evalIn(main, 'window.xer.split.ratio(0.99)'); check('extreme ratio is clamped to 0.8', clamp === 0.8);
     await evalIn(main, 'window.xer.split.ratio(0.5)');
 
+    // draggable divider: drag to a new x, panes follow; double-click resets
+    const geo = JSON.parse(await evalIn(main, `(() => { const d = document.getElementById('splitDivider'); const r = d.getBoundingClientRect(); return JSON.stringify({ hidden: d.hidden, x: r.x, w: r.width, cursor: getComputedStyle(d).cursor }); })()`));
+    check('divider strip is shown while split', geo.hidden === false && geo.w === 8 && geo.cursor === 'col-resize');
+    const dr = await evalIn(main, 'window.xer.split.drag(300)'); await sleep(500);
+    w = await widths();
+    check('drag IPC moves the divider to the pointer', dr > 0.2 && dr < 0.4 && w['/a'] < w['/b'] * 0.6);
+    const lim = await evalIn(main, 'window.xer.split.drag(1)'); check('dragging past the edge clamps to 0.2', lim === 0.2);
+    check('junk drag is rejected', (await evalIn(main, 'window.xer.split.drag("x")')) === false);
+    // a real pointer drag on the strip, using synthetic pointer events with capture
+    await evalIn(main, `(() => { const d = document.getElementById('splitDivider'); const r = d.getBoundingClientRect(); const y = r.y + 50;
+      d.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, clientX: r.x + 4, clientY: y, bubbles: true }));
+      d.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientX: 700, clientY: y, bubbles: true }));
+      d.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 700, clientY: y, bubbles: true })); })()`);
+    await sleep(700); w = await widths();
+    check('a pointer drag on the strip puts the divider under the pointer', Math.abs(w['/a'] + 4 - 700) <= 3 && w['/a'] > w['/b']);
+    await evalIn(main, `document.getElementById('splitDivider').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`); await sleep(500);
+    const after = await evalIn(main, 'window.xer.split.get()');
+    check('double-click resets to an even split', after && after.ratio === 0.5);
+    await sleep(500); w = await widths(); check('panes are equal again after reset', Math.abs(w['/a'] - w['/b']) <= 2);
+
     // focus moves between panes without ending the split
     s = await snap(main, `window.xer.switchTab(${B})`);
     check('clicking the other pane tab keeps split and moves focus', s.split && s.activeId === B);

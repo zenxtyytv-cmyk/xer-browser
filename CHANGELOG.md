@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+- **Draggable split divider**: in split view, drag the strip between the two panes to resize them live; double-click it to reset to 50/50.
+  - The strip is 8px wide (was a 4px gap, too small to grab) and highlights on hover. The result is still clamped to 20 to 80 percent.
+  - Pointer capture keeps the drag going when the cursor crosses a page; the final position is always applied on release.
+  - New pure helpers `SplitState.ratioFromX` and `divider()` keep the maths unit-testable.
+- Refactor: one `contentArea()` definition now feeds both layout and divider drag, so they cannot drift apart.
+- Tests: 6 new unit checks (divider maths) and 7 new live checks (real strip geometry, IPC drag, pointer drag, double-click reset).
+
 ## 1.0.0
 - **Split view** (Ctrl+Shift+S, the split button in the toolbar, or right-click a tab > Split view with next tab): show two tabs side by side.
   - Pairs the active tab with the next one in the tab bar (or the previous one if it is the last).
