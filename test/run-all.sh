@@ -25,6 +25,10 @@ run reorder   node test/reorder.js
 run gamemode  node test/gamemode.js
 run split     node test/split.js
 run splitlive node test/splitlive.js
+run readersafe node test/readersafe.js
+run readerlive node test/readerlive.js
+run plan      node test/plan.js
+run planlive  node test/planlive.js
 
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"
 exit $fail

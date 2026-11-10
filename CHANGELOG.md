@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0
+- **Multi-step action plans**: when Claude proposes several page actions, they now appear as one numbered plan with a single **Approve plan** button instead of one approval per step.
+  - Steps run top to bottom with a short pause after page loads and clicks. The first failing step stops the plan and the rest are marked skipped, so nothing runs on a page that is not in the expected state.
+  - A **Stop** button halts a running plan after the current step. **Deny** runs nothing.
+  - Plans that navigate to another site show a warning before you approve.
+  - Safety is unchanged: nothing runs without your click, every step is re-validated in the main process, password and payment fields stay blocked, and a step refuses to run if you switched to another tab. A single action keeps the simple Approve/Deny card.
+  - Claude is told to list steps in order, keep plans short, and never depend on content it cannot see yet.
+- **Security fix: reader mode ran page script.** Readability removes `<script>` but keeps attributes such as `onerror=`, so a hostile article could run code in the reader page. Article HTML now goes through an allowlist sanitizer (safe tags and attributes only, `javascript:` and `data:text/html` URLs removed, links get `noopener`, images get no-referrer), and the reader page carries a Content-Security-Policy that forbids scripts as a second layer.
+- Tests: 23 sanitizer checks, 8 live reader-safety checks (verified to fail without the fix), 18 plan-runner checks, 15 live plan checks. Live testing also caught a missing `Plan` global in the sidebar before release.
+
 ## 1.1.0
 - **Draggable split divider**: in split view, drag the strip between the two panes to resize them live; double-click it to reset to 50/50.
   - The strip is 8px wide (was a 4px gap, too small to grab) and highlights on hover. The result is still clamped to 20 to 80 percent.

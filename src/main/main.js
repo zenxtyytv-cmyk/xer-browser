@@ -14,6 +14,7 @@ const { PinState } = require('./pins');
 const { GroupState, COLORS: GROUP_COLORS } = require('./groups');
 const { SplitState } = require('./split');
 const { TabOrder } = require('./taborder');
+const readerSafe = require('./readersafe');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -401,12 +402,12 @@ function setupIpc() {
       })()`);
       if (!art) return { ok: false, error: 'No article found on this page' };
       const esc = (x) => String(x).replace(/</g, '&lt;');
-      const html = `<!doctype html><meta charset="utf-8"><title>${esc(art.title)}</title>
+      const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${readerSafe.READER_CSP}"><title>${esc(art.title)}</title>
 <style>body{background:#0b0b10;color:#e8e8f0;font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:48px 24px;line-height:1.7}
 h1{font-family:system-ui;line-height:1.2}p.byline{color:#9a9ab0;font-style:italic}
 a{color:#7aa2f7}img{max-width:100%;height:auto}figure{margin:24px 0}
 blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#c0c0d0}</style>
-<h1>${esc(art.title)}</h1>${art.byline ? `<p class="byline">${esc(art.byline)}</p>` : ''}${art.content}
+<h1>${esc(art.title)}</h1>${art.byline ? `<p class="byline">${esc(art.byline)}</p>` : ''}${readerSafe.sanitize(art.content)}
 <div style="border-top:1px solid #34344d;margin-top:48px;padding-top:16px;color:#9a9ab0;font-family:system-ui">Xer Reader — press the back button to return to the original page.</div>`;
       wc.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
       return { ok: true };
@@ -488,7 +489,7 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
       }
       // Proposed actions are only parsed here; nothing runs until the user approves each one.
       const parsed = add ? actions.parse(text) : { text, actions: [] };
-      return { ok: true, text: parsed.text || text, actions: parsed.actions, tabId: activeId };
+      return { ok: true, text: parsed.text || text, actions: parsed.actions, tabId: activeId, pageUrl: pc ? pc.url : '' };
     }
     catch (e) { return { ok: false, error: e.message }; }
   });

@@ -1,0 +1,28 @@
+// Reader sanitizer unit tests (pure, no Electron).
+const { sanitize, safeUrl, READER_CSP } = require('../src/main/readersafe');
+let bad = 0; const check = (n, ok) => { console.log((ok ? 'PASS ' : 'FAIL ') + n); if (!ok) { bad++; process.exitCode = 1; } };
+const has = (html, re) => re.test(sanitize(html));
+check('onerror removed', !has('<img src=x onerror=alert(1)>', /onerror/i));
+check('onclick removed, text kept', sanitize('<p onclick="x()">hi</p>') === '<p>hi</p>');
+check('javascript: href removed', !has('<a href="javascript:alert(1)">x</a>', /javascript/i));
+check('obfuscated java\\nscript: removed', !has('<a href="java\nscript:alert(1)">x</a>', /script:/i));
+check('entity-obfuscated javascript: removed', !has('<a href="&#106;avascript:alert(1)">x</a>', /href/i) || !has('<a href="&#106;avascript:alert(1)">x</a>', /javascript/i));
+check('script element removed with content', sanitize('<p>a</p><script>alert(1)</script><p>b</p>') === '<p>a</p><p>b</p>');
+check('nested script trick removed', !has('<scr<script>ipt>alert(1)</scr</script>ipt>', /alert/));
+check('svg onload removed', sanitize('<svg onload=alert(1)></svg><p>t</p>') === '<p>t</p>');
+check('iframe/object/embed/form removed', !has('<iframe src="https://e.com"></iframe><object data=x></object><embed src=x><form action=x><input></form>', /<(iframe|object|embed|form|input)/i));
+check('style element removed', !has('<style>body{display:none}</style><p>x</p>', /<style/i));
+check('data:text/html img src removed', !has('<img src="data:text/html;base64,AAAA">', /data:text/));
+check('data:image png kept', has('<img src="data:image/png;base64,iVBORw0KGgo=">', /data:image\/png/));
+check('https link kept with noopener', has('<a href="https://ok.com/a?b=1&c=2">ok</a>', /href="https:\/\/ok\.com\/a\?b=1&amp;c=2"/) && has('<a href="https://ok.com">ok</a>', /rel="noopener noreferrer nofollow"/));
+check('img gets no-referrer', has('<img src="https://a.com/x.png">', /referrerpolicy="no-referrer"/));
+check('unknown attributes (style, class, id) dropped', sanitize('<p style="x" class="y" id="z">t</p>') === '<p>t</p>');
+check('comments removed', sanitize('<p>a<!-- <script>x</script> --></p>') === '<p>a</p>');
+check('quote-breaking attribute stays one attribute', !has('<a href="https://a.com/&quot; onmouseover=&quot;x">t</a>', / onmouseover=/));
+check('formatting and headings survive', sanitize('<h2>T</h2><p><em>a</em> <strong>b</strong></p><ul><li>x</li></ul>') === '<h2>T</h2><p><em>a</em> <strong>b</strong></p><ul><li>x</li></ul>');
+check('stray < escaped', sanitize('1 < 2') === '1 &lt; 2');
+check('null / non-string input safe', sanitize(null) === '' && sanitize(undefined) === '');
+check('safeUrl: relative ok, javascript/vbscript/file blocked', safeUrl('/a/b') === '/a/b' && safeUrl('javascript:1') === null && safeUrl('vbscript:1') === null && safeUrl('file:///etc/passwd') === null);
+check('safeUrl: protocol-relative upgraded to https', safeUrl('//cdn.x.com/a.png') === 'https:' + '//cdn.x.com/a.png');
+check('CSP forbids scripts', /default-src 'none'/.test(READER_CSP) && !/script-src/.test(READER_CSP));
+process.exit(bad ? 1 : 0);

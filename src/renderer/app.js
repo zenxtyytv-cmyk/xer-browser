@@ -197,23 +197,58 @@ async function send() {
   const allow = $('allowAct').checked; if (allow) $('withPage').checked = true;
   const r = await xer.ask({ messages: history, withPage: $('withPage').checked, allowActions: allow });
   wait.remove();
-  if (r.ok) { add('ai', r.text); history.push({ role: 'assistant', content: r.text }); if (r.actions && r.actions.length) actionCard(r.actions, r.tabId); }
+  if (r.ok) { add('ai', r.text); history.push({ role: 'assistant', content: r.text }); if (r.actions && r.actions.length) actionCard(r.actions, r.tabId, r.pageUrl); }
   else { add('err', r.error); history.pop(); }
 }
-// ---- Claude page actions: every action needs an explicit click on Approve ----
-function actionCard(list, tabId) {
+// ---- Claude page actions: nothing runs until you click Approve ----
+// One action: approve or deny it. Several actions: a numbered plan you approve once; it runs in order, stops at the
+// first failure, and can be stopped any time. Every step is still validated again in the main process.
+function actionCard(list, tabId, pageUrl) {
+  if (list.length > 1) return planCard(list, tabId, pageUrl);
   const card = document.createElement('div'); card.className = 'm act';
-  const h = document.createElement('b'); h.textContent = 'Claude wants to do ' + list.length + (list.length === 1 ? ' thing' : ' things') + ':'; card.append(h);
-  list.forEach(a => {
-    const row = document.createElement('div'); row.className = 'actrow';
-    const lbl = document.createElement('span'); lbl.textContent = a.label + (a.type === 'type' ? ' \u2192 "' + a.text.slice(0, 60) + '"' : a.type === 'navigate' ? ' (' + a.url + ')' : '');
-    const ok = document.createElement('button'); ok.textContent = 'Approve'; ok.className = 'approve';
-    const no = document.createElement('button'); no.textContent = 'Deny';
-    const done = (msg, bad) => { ok.remove(); no.remove(); const st = document.createElement('i'); st.textContent = msg; if (bad) st.className = 'bad'; row.append(st); };
-    ok.onclick = async () => { ok.disabled = no.disabled = true; const r = await xer.runAction({ action: a, tabId }); done(r && r.ok ? 'Done' : 'Failed: ' + ((r && r.error) || 'unknown'), !(r && r.ok)); };
-    no.onclick = () => done('Denied');
-    row.append(lbl, ok, no); card.append(row);
+  const h = document.createElement('b'); h.textContent = 'Claude wants to do 1 thing:'; card.append(h);
+  const a = list[0];
+  const row = document.createElement('div'); row.className = 'actrow';
+  const lbl = document.createElement('span'); lbl.textContent = stepText(a);
+  const ok = document.createElement('button'); ok.textContent = 'Approve'; ok.className = 'approve';
+  const no = document.createElement('button'); no.textContent = 'Deny';
+  const done = (msg, bad) => { ok.remove(); no.remove(); const st = document.createElement('i'); st.textContent = msg; if (bad) st.className = 'bad'; row.append(st); };
+  ok.onclick = async () => { ok.disabled = no.disabled = true; const r = await xer.runAction({ action: a, tabId }); done(r && r.ok ? 'Done' : 'Failed: ' + ((r && r.error) || 'unknown'), !(r && r.ok)); };
+  no.onclick = () => done('Denied');
+  row.append(lbl, ok, no); card.append(row);
+  $('msgs').append(card); $('msgs').scrollTop = 1e9;
+}
+const stepText = (a) => a.label + (a.type === 'type' ? ' \u2192 "' + a.text.slice(0, 60) + '"' : a.type === 'navigate' ? ' (' + a.url + ')' : '');
+function planCard(list, tabId, pageUrl) {
+  const card = document.createElement('div'); card.className = 'm act plan';
+  const h = document.createElement('b'); h.textContent = 'Claude proposes a plan: ' + Plan.describe(list); card.append(h);
+  if (Plan.leavesSite(list, pageUrl)) { const w = document.createElement('div'); w.className = 'planwarn'; w.textContent = 'This plan leaves the current site. Check the addresses below before approving.'; card.append(w); }
+  const rows = list.map((a, i) => {
+    const row = document.createElement('div'); row.className = 'actrow planstep';
+    const n = document.createElement('em'); n.textContent = (i + 1) + '.';
+    const lbl = document.createElement('span'); lbl.textContent = stepText(a);
+    const st = document.createElement('i'); st.textContent = 'waiting';
+    row.append(n, lbl, st); card.append(row); return st;
   });
+  const bar = document.createElement('div'); bar.className = 'actrow';
+  const ok = document.createElement('button'); ok.textContent = 'Approve plan (' + list.length + ' steps)'; ok.className = 'approve';
+  const no = document.createElement('button'); no.textContent = 'Deny';
+  const stop = document.createElement('button'); stop.textContent = 'Stop'; stop.hidden = true;
+  const sum = document.createElement('i'); bar.append(ok, no, stop, sum); card.append(bar);
+  let stopped = false;
+  const label = { waiting: 'waiting', running: 'running\u2026', done: 'done', failed: 'failed', skipped: 'skipped' };
+  ok.onclick = async () => {
+    ok.hidden = no.hidden = true; stop.hidden = false;
+    const r = await Plan.runPlan(list, (a) => xer.runAction({ action: a, tabId }), {
+      shouldStop: () => stopped,
+      onProgress: (i, state, info) => { rows[i].textContent = label[state] + (state === 'failed' && info ? ': ' + info : ''); rows[i].className = state === 'failed' ? 'bad' : state === 'skipped' ? 'dim' : ''; $('msgs').scrollTop = 1e9; }
+    });
+    stop.hidden = true;
+    sum.textContent = r.ok ? 'Plan finished: all ' + r.completed + ' steps done' : r.stopped ? 'Stopped after ' + r.completed + ' of ' + list.length + ' steps' : 'Plan stopped at step ' + (r.failedAt + 1) + ': ' + r.error;
+    sum.className = r.ok ? '' : 'bad';
+  };
+  no.onclick = () => { ok.hidden = no.hidden = true; sum.textContent = 'Plan denied. Nothing was run.'; };
+  stop.onclick = () => { stopped = true; stop.disabled = true; stop.textContent = 'Stopping\u2026'; };
   $('msgs').append(card); $('msgs').scrollTop = 1e9;
 }
 $('send').onclick = send;

@@ -20,7 +20,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - Auto-upgrade HTTP to HTTPS, DNT + GPC headers, cross-origin referrer trimming
 - All site permissions (camera, mic, location, notifications) denied by default
 - Claude sidebar (Ctrl+J): chat, optionally reading the current page. API key encrypted via OS keychain.
-- **Claude page actions (with your approval)**: tick "actions" in the sidebar and ask Claude to do something ("fill the search box and press search"). It proposes clicks, typing, scrolling or navigation as cards, and nothing runs until you press **Approve** on each one. Password, card and identity fields are always refused, and only http(s) navigation is allowed.
+- **Claude page actions (with your approval)**: tick "actions" in the sidebar and ask Claude to do something ("fill the search box and press search"). It proposes clicks, typing, scrolling or navigation as cards, and nothing runs until you press **Approve**. Password, card and identity fields are always refused, and only http(s) navigation is allowed. Several steps arrive as one numbered **plan** you approve once: it runs in order, stops at the first failure, can be stopped mid-way, and warns you if it leaves the current site.
 - Reader mode (📖 button): distraction-free view of any article, powered by Mozilla Readability
 
 ## Install on Windows
@@ -83,9 +83,9 @@ What it cannot do: the frame rate of a cloud-gaming stream is decided by the clo
 
 
 ## Roadmap
-Extension support, multi-step action plans.
+Extension support.
 
-Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider.
+Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode.
 
 ## Testing
 ```
@@ -101,6 +101,10 @@ node test/taborder.js
 xvfb-run -a node test/reorder.js
 node test/split.js
 xvfb-run -a node test/splitlive.js
+node test/readersafe.js
+xvfb-run -a node test/readerlive.js
+node test/plan.js
+xvfb-run -a node test/planlive.js
 ```
 
 ## Shortcuts

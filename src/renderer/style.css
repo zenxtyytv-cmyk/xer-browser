@@ -101,3 +101,6 @@ button:hover{background:#34344d}
 #splitDivider{position:fixed;z-index:50;cursor:col-resize;background:#2a2a3c;transition:background .12s}
 #splitDivider:hover,#splitDivider.drag{background:#7c7cff}
 #splitDivider[hidden]{display:none}
+.m.act.plan .planstep{flex-wrap:nowrap;align-items:flex-start}.m.act.plan .planstep em{font-style:normal;color:#9a9ab0;min-width:16px}
+.m.act.plan .planstep span{flex:1 1 auto}.m.act.plan .planstep i{color:#9a9ab0;white-space:nowrap}.m.act.plan .planstep i.bad{color:#f88}.m.act.plan .planstep i.dim{color:#666}
+.planwarn{background:#3a2a1a;border:1px solid #6a4a2a;color:#f0c080;border-radius:6px;padding:4px 8px;font-size:12px}

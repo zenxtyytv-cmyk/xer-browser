@@ -11,7 +11,7 @@ const SYSTEM_ADDENDUM =
   'Reply with a short plain explanation, then ONE fenced block:\n```xer-actions\n[{"type":"click","selector":"css","label":"what this does"},' +
   '{"type":"type","selector":"css","text":"value","label":"..."},{"type":"navigate","url":"https://...","label":"..."},' +
   '{"type":"scroll","direction":"down","label":"..."}]\n```\n' +
-  'Max 8 actions. The user must approve each one. Never type into password, payment or identity fields. Never propose purchases or sending messages without saying so in the label.';
+  'Max 8 actions. For a multi-step task, list the steps IN ORDER as one plan: the user approves the whole plan once and it runs top to bottom, stopping at the first failure, so each step must still make sense if earlier steps worked. Prefer the fewest steps. Never include a step that depends on content you cannot see yet. Never type into password, payment or identity fields. Never propose purchases or sending messages without saying so in the label.';
 
 function parse(text) {
   if (typeof text !== 'string') return { text: '', actions: [] };
