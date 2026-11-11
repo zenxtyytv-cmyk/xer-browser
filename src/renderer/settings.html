@@ -22,6 +22,11 @@ select,input{width:100%;margin:4px 0 8px}.row{display:flex;gap:8px;align-items:c
 <label><input type="checkbox" id="doh" style="width:auto"> Encrypted DNS (DNS-over-HTTPS)</label>
 <small>Ad and tracker blocking is always on (Ghostery engine with EasyList and EasyPrivacy).</small></section>
 
+<section class="w"><h4>Extensions</h4>
+<small>Load unpacked Chrome extensions (Manifest V2 or V3). Click Add, pick the folder that contains manifest.json, and review the permissions before confirming. Only add extensions you trust: they can see the pages they have access to. Not every Chrome extension API is supported by Electron.</small>
+<div id="extlist"></div>
+<button id="extadd">Add extension from folder...</button> <span id="exterr" class="bad"></span></section>
+
 <section class="w"><h4>Gaming / Cloud gaming</h4>
 <small>Removes the browser's own bottlenecks so a cloud-gaming stream (GeForce NOW, Xbox Cloud Gaming, Luna, Shadow) is shown at its full rate with low latency. The stream's frame rate itself is set by the cloud server and your connection, so no browser can guarantee a specific number. Toggle Game Mode any time with Ctrl+Shift+G.</small>
 <label><input type="checkbox" id="g_enabled" style="width:auto"> Game Mode on at launch</label>

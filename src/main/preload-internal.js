@@ -6,6 +6,7 @@ if (location.protocol === 'file:') {
     net: { status: inv('net:status'), add: inv('net:add'), remove: inv('net:remove'), mode: inv('net:mode'), doh: inv('net:doh'), ip: inv('net:ip') },
     dash: { get: inv('dash:get'), set: inv('dash:set'), reset: inv('dash:reset') },
     game: { get: inv('game:get'), set: inv('game:set'), restart: inv('game:restart') },
+    ext: { list: inv('ext:list'), add: inv('ext:add'), toggle: inv('ext:toggle'), remove: inv('ext:remove') },
     ai: { get: inv('ai:get'), set: inv('ai:set'), models: inv('ai:models') }
   });
 }

@@ -50,3 +50,25 @@ async function drawGame() {
 GKEYS.forEach(k => $('#g_' + k).onchange = async (e) => { try { await X.game.set({ [k]: e.target.checked }); } catch {} drawGame(); });
 $('#g_restart').onclick = () => X.game.restart();
 drawGame();
+
+// ---- Extensions ----
+async function drawExt() {
+  let list; try { list = await X.ext.list(); } catch { return; }
+  const box = $('#extlist'); box.innerHTML = '';
+  if (!list.length) { box.innerHTML = '<small>No extensions installed.</small>'; return; }
+  list.forEach(e => {
+    const d = document.createElement('div'); d.className = 'px' + (e.enabled && e.loaded ? ' on' : '');
+    const status = !e.enabled ? 'disabled' : e.loaded ? 'running' : (e.error ? 'failed: ' + e.error : 'not loaded');
+    d.innerHTML = '<span>' + esc(e.name) + ' <small style="display:inline">v' + esc(e.version) + ' - ' + esc(status) + '</small></span><span></span>';
+    const tg = document.createElement('button'); tg.textContent = e.enabled ? 'Disable' : 'Enable';
+    tg.onclick = async () => { await X.ext.toggle(e.path, !e.enabled); drawExt(); };
+    const rm = document.createElement('button'); rm.textContent = 'Remove';
+    rm.onclick = async () => { await X.ext.remove(e.path); drawExt(); };
+    d.lastChild.append(tg, ' ', rm); box.append(d);
+  });
+}
+$('#extadd').onclick = async () => {
+  try { $('#exterr').textContent = ''; await X.ext.add(); } catch (x) { $('#exterr').textContent = x.message.replace(/^Error invoking remote method '[^']+': Error: /, ''); }
+  drawExt();
+};
+drawExt();

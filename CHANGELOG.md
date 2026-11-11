@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+- **Extension support**: load unpacked Chrome extensions (Manifest V2 or V3) from Settings > Extensions. Pick the folder that contains `manifest.json`; Xer shows the name, version and any sensitive permissions (all-sites access, cookies, history, tabs, downloads, proxy, and so on) in a confirmation dialog before anything is loaded.
+  - Add, disable, re-enable and remove extensions. Enabled ones reload automatically at every launch, and the list is saved between sessions.
+  - Each extension shows its status (running, disabled, or the reason it failed to load).
+  - File-URL access is off for extensions by default.
+  - Honest limits: this uses Electron's extension support, which covers content scripts and many common APIs but not the whole Chrome extension API. There is no Chrome Web Store installer, so extensions are added from an unpacked folder.
+  - Found and worked around an Electron 39 hard crash: destroying the only window on a session and opening a new one right after removing an extension. The browser keeps its main window alive, so Disable is safe, and the live test is written to match that.
+- Persisted extension list only stores path, name, version and enabled state; runtime ids and errors are re-derived at launch.
+- New tests: 20 manifest/list checks and 12 live checks (real extension loads, its content script runs, stops after removal, runs again when re-enabled, Settings renders it).
+
 ## 1.2.0
 - **Multi-step action plans**: when Claude proposes several page actions, they now appear as one numbered plan with a single **Approve plan** button instead of one approval per step.
   - Steps run top to bottom with a short pause after page loads and clicks. The first failing step stops the plan and the rest are marked skipped, so nothing runs on a page that is not in the expected state.

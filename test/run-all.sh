@@ -28,6 +28,8 @@ run splitlive node test/splitlive.js
 run readersafe node test/readersafe.js
 run readerlive node test/readerlive.js
 run plan      node test/plan.js
+run extensions node test/extensions.js
+run extlive   $ELEC test/extlive.js $FLAGS
 run planlive  node test/planlive.js
 
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"

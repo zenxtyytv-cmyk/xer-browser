@@ -15,6 +15,7 @@ const { GroupState, COLORS: GROUP_COLORS } = require('./groups');
 const { SplitState } = require('./split');
 const { TabOrder } = require('./taborder');
 const readerSafe = require('./readersafe');
+const exts = require('./extensions');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 const fetch = require('cross-fetch');
 const fsx = require('fs');
@@ -273,6 +274,7 @@ async function setupAdblock(ses) {
   } catch (e) { console.log('[xer] adblock engine unavailable, using built-in list:', e.message); }
 }
 
+let extBoot = null; // set by setupIpc(): loads enabled extensions at startup
 function setupPrivacy() {
   const ses = session.fromPartition('persist:xer');
   setupAdblock(ses);
@@ -438,6 +440,47 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
   }
   function gameState() { return { cfg: gameCfg, active: gameMode, overlay: overlayOn.has(activeId), restartNeeded: gameRestartNeeded }; }
   let gameRestartNeeded = false;
+  // ---- Extensions (unpacked Chrome extensions, MV2/MV3) ----
+  let extList = exts.normalizeList(store.load('extensions', []));
+  const saveExt = () => store.save('extensions', extList.map(({ path, name, version, enabled }) => ({ path, name, version, enabled })));
+  const extSes = () => session.fromPartition('persist:xer');
+  const extApi = () => extSes().extensions;
+  const extView = () => extList.map(e => ({ ...e, loaded: !!(e.id && extApi() && extApi().getExtension && extApi().getExtension(e.id)) }));
+  async function extLoad(e) {
+    try { const x = await extApi().loadExtension(e.path, { allowFileAccess: false }); e.id = x.id; e.error = ''; return true; }
+    catch (err) { e.error = String(err && err.message || err).slice(0, 200); return false; }
+  }
+  async function extLoadAll() { for (const e of extList) if (e.enabled) await extLoad(e); saveExt(); }
+  extBoot = extLoadAll;
+  ipcMain.handle('ext:list', guard(() => extView()));
+  ipcMain.handle('ext:add', guard(async () => {
+    const { dialog } = require('electron');
+    const r = await dialog.showOpenDialog(win, { title: 'Choose the extension folder (contains manifest.json)', properties: ['openDirectory'] });
+    if (r.canceled || !r.filePaths[0]) return { cancelled: true };
+    const dir = r.filePaths[0];
+    const m = exts.readManifest(dir);
+    const warn = m.allSites ? '\n\nThis extension can read and change EVERY site you visit.' : (m.risky.length ? '\n\nSensitive access: ' + m.risky.join(', ') : '');
+    const c = await dialog.showMessageBox(win, { type: 'warning', buttons: ['Add extension', 'Cancel'], defaultId: 1, cancelId: 1,
+      message: 'Add "' + m.name + '" v' + m.version + '?', detail: dir + warn + '\n\nOnly add extensions you trust.' });
+    if (c.response !== 0) return { cancelled: true };
+    extList = exts.upsert(extList, { path: dir, name: m.name, version: m.version, enabled: true, id: '' });
+    const cur = extList.find(e => e.path === dir);
+    await extLoad(cur);   // sets cur.id / cur.error on the stored object
+    saveExt();
+    return { ok: true, list: extView() };
+  }));
+  ipcMain.handle('ext:toggle', guard(async (p, on) => {
+    const e = extList.find(x => x.path === p); if (!e) return extView();
+    e.enabled = !!on;
+    if (e.enabled) await extLoad(e); else if (e.id) { try { await extApi().removeExtension(e.id); } catch {} e.id = ''; }
+    saveExt(); return extView();
+  }));
+  ipcMain.handle('ext:remove', guard(async (p) => {
+    const e = extList.find(x => x.path === p);
+    if (e && e.id) { try { await extApi().removeExtension(e.id); } catch {} }
+    extList = extList.filter(x => x.path !== p); saveExt(); return extView();
+  }));
+
   ipcMain.handle('game:get', guard(() => gameState()));
   ipcMain.handle('game:set', guard((patch) => {
     const before = gameCfg;
@@ -510,6 +553,7 @@ app.whenReady().then(() => {
   bookmarks = store.load('bookmarks', []); history = store.load('history', []); sitePerms = store.load('perms', {}); downloads.hydrate(store.load('downloads', []));
   widgets.init(); localai.init();
   setupPrivacy(); setupIpc();
+  if (extBoot) extBoot().catch(e => console.log('[xer] extensions', e.message));
   network.init().catch(e => console.log('[xer] network init', e.message));
   win = new BrowserWindow({
     width: 1280, height: 820, title: 'Xer Browser', backgroundColor: '#0b0b10',

@@ -83,9 +83,12 @@ What it cannot do: the frame rate of a cloud-gaming stream is decided by the clo
 
 
 ## Roadmap
-Extension support.
+Chrome Web Store installer for extensions, broader extension API coverage.
 
-Done: tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode.
+Done: extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode.
+
+## Extensions
+Open Settings > Extensions > **Add extension from folder** and choose an unpacked Chrome extension (the folder with `manifest.json`, Manifest V2 or V3). Xer lists its sensitive permissions and asks before loading it. Extensions can be disabled or removed at any time and reload on launch. Built on Electron's extension support, so some Chrome APIs are unavailable, and only add extensions you trust.
 
 ## Testing
 ```
@@ -105,6 +108,8 @@ node test/readersafe.js
 xvfb-run -a node test/readerlive.js
 node test/plan.js
 xvfb-run -a node test/planlive.js
+node test/extensions.js
+xvfb-run -a npx electron test/extlive.js --no-sandbox --disable-gpu
 ```
 
 ## Shortcuts
