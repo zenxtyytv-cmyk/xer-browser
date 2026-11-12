@@ -31,6 +31,9 @@ run plan      node test/plan.js
 run extensions node test/extensions.js
 run extlive   $ELEC test/extlive.js $FLAGS
 run planlive  node test/planlive.js
+run urlinput  node test/urlinput.js
+run pdfexport node test/pdfexport.js
+run pdflive   node test/pdflive.js
 
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"
 exit $fail

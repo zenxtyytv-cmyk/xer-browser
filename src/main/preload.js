@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld('xer', {
   find: inv('find'), zoom: inv('zoom'), devtools: inv('devtools'), resetPerms: inv('perms:reset'),
   split: { toggle: inv('split:toggle'), ratio: inv('split:ratio'), swap: inv('split:swap'), get: inv('split:get'), drag: inv('split:drag') },
   game: { get: inv('game:get'), set: inv('game:set'), toggle: inv('game:toggle'), overlay: inv('game:overlay'), restart: inv('game:restart') },
-  readerOpen: inv('reader:open'),
+  readerOpen: inv('reader:open'), savePdf: inv('page:pdf'),
   openSettings: inv('open:settings'), ai: { get: inv('ai:get'), set: inv('ai:set'), models: inv('ai:models') },
   hasKey: inv('claude:hasKey'), setKey: inv('claude:setKey'), ask: inv('claude:ask'), runAction: inv('claude:runAction'),
   on: (ch, fn) => ipcRenderer.on(ch, (_, d) => fn(d))

@@ -342,6 +342,13 @@ document.querySelectorAll('#quick button').forEach(b => b.onclick = () => { $('w
 
 // ---- reader mode ----
 $('readerBtn').onclick = async () => { const r = await xer.readerOpen(); if (!r.ok) alert(r.error); };
+// ---- save as PDF ----
+$('pdfBtn').onclick = async () => {
+  const b = $('pdfBtn'); if (b.disabled) return; b.disabled = true;
+  try { const r = await xer.savePdf(); if (r && !r.ok && !r.canceled) toast(r.error || 'Could not save the PDF.'); else if (r && r.ok) toast('Saved PDF: ' + r.path.split(/[\\/]/).pop()); }
+  catch { toast('Could not save the PDF.'); } finally { b.disabled = false; }
+};
+xer.on('shortcut', (s) => { if (s === 'pdf') $('pdfBtn').click(); });
 $('gear').onclick = () => xer.openSettings();
 
 // ---- Game Mode ----

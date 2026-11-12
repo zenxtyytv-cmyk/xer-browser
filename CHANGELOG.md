@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+- **Save page as PDF** (Ctrl+P or the PDF toolbar button): saves the current page to a PDF through a Save dialog that starts in your Downloads folder with a file name taken from the page title. Backgrounds are included, long pages split across pages, and reader-mode pages can be saved too. Existing files are never overwritten (a second save becomes `name (1).pdf`). Internal pages such as the new-tab page are refused with a short message. Uses Electron's built-in PDF printing, so there is no new dependency.
+- **Address bar fixes** (now in `urlinput.js`, with tests):
+  - Text containing a space is always a search. Before, `example.com/a b` or `localhost bar` was turned into a broken address.
+  - `localhostfoo` used to count as a local address because it started with "localhost". It is now a search.
+  - Pressing Enter on an empty address bar no longer runs a search for nothing.
+  - Local addresses such as `localhost:3000` open over `http://` (most dev servers have no TLS) instead of failing on `https://`. Every other plain `http://` address is still upgraded to `https://`.
+  - `javascript:`, `vbscript:`, `data:` and `blob:` typed into the address bar become a search instead of being loaded. `about:blank` works.
+- New tests: 26 address-bar checks, 23 PDF helper checks, and 14 live checks that save real PDFs from the running app and verify the page text inside them.
+
 ## 1.3.0
 - **Extension support**: load unpacked Chrome extensions (Manifest V2 or V3) from Settings > Extensions. Pick the folder that contains `manifest.json`; Xer shows the name, version and any sensitive permissions (all-sites access, cookies, history, tabs, downloads, proxy, and so on) in a confirmation dialog before anything is loaded.
   - Add, disable, re-enable and remove extensions. Enabled ones reload automatically at every launch, and the list is saved between sessions.

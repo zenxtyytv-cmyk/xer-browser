@@ -3,6 +3,7 @@
 A privacy-first browser built on the Chromium engine (via Electron), with Claude as the built-in assistant.
 
 ## Features
+- **Save as PDF** (Ctrl+P or the PDF button): save any web page or reader-mode page to a PDF, with backgrounds, page-title file names and no silent overwriting.
 - **Split view** (Ctrl+Shift+S): two tabs side by side with a draggable divider (double-click to reset), 50/50, 70/30 and 30/70 presets, and a swap button.
 - **Game Mode** (Ctrl+Shift+G): cloud-gaming profile with uncapped frame rate, GPU decode, low latency, no background throttling, live FPS counter, and no permission pop-ups mid-game. See [Gaming](#gaming) for what it can and cannot do.
 - **Proxy / VPN manager** (Settings): route traffic through any SOCKS5/HTTP proxy, including VPN-provider proxy endpoints, Tor (`socks5://127.0.0.1:9050`), or a local WireGuard/OpenVPN SOCKS port. Xer does not run VPN servers itself.
@@ -85,7 +86,7 @@ What it cannot do: the frame rate of a cloud-gaming stream is decided by the clo
 ## Roadmap
 Chrome Web Store installer for extensions, broader extension API coverage.
 
-Done: extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode.
+Done: extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode, extension support, Save as PDF.
 
 ## Extensions
 Open Settings > Extensions > **Add extension from folder** and choose an unpacked Chrome extension (the folder with `manifest.json`, Manifest V2 or V3). Xer lists its sensitive permissions and asks before loading it. Extensions can be disabled or removed at any time and reload on launch. Built on Electron's extension support, so some Chrome APIs are unavailable, and only add extensions you trust.
@@ -110,10 +111,13 @@ node test/plan.js
 xvfb-run -a node test/planlive.js
 node test/extensions.js
 xvfb-run -a npx electron test/extlive.js --no-sandbox --disable-gpu
+node test/urlinput.js
+node test/pdfexport.js
+xvfb-run -a node test/pdflive.js
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+S split view, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder. Drag the divider between split panes to resize.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+P save as PDF, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+S split view, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder. Drag the divider between split panes to resize.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)

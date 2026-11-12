@@ -101,13 +101,8 @@ function pushTabs() {
   });
 }
 
-function normalize(input) {
-  input = input.trim();
-  if (/^http:\/\//i.test(input) && !/^http:\/\/(localhost|127\.)/.test(input)) return input.replace(/^http:/i, 'https:');
-  if (/^[a-z]+:\/\//i.test(input) || input.startsWith('file:')) return input;
-  if (/^[\w-]+(\.[\w-]+)+(:\d+)?(\/.*)?$/.test(input) || input.startsWith('localhost')) return 'https://' + input;
-  return 'https://duckduckgo.com/?q=' + encodeURIComponent(input);
-}
+const normalize = require('./urlinput').normalize;
+const pdfx = require('./pdfexport');
 
 function newTab(url, opts = {}) {
   const id = nextId++;
@@ -142,7 +137,7 @@ function newTab(url, opts = {}) {
     }
   });
   switchTab(id);
-  wc.loadURL(url ? normalize(url) : 'file://' + path.join(__dirname, '../renderer/newtab.html'));
+  wc.loadURL((url && normalize(url)) || 'file://' + path.join(__dirname, '../renderer/newtab.html'));
   return id;
 }
 
@@ -364,7 +359,7 @@ function setupIpc() {
   ipcMain.handle('group:toggle', (_, gid) => { const r = groups.toggleCollapsed(gid); pushTabs(); return r; });
   ipcMain.handle('group:ungroup', (_, gid) => { groups.ungroup(gid); pushTabs(); return true; });
   ipcMain.handle('group:close', (_, gid) => { for (const t of groups.members(gid)) closeTab(t); return true; });
-  ipcMain.handle('nav:go', (_, url) => tabs.get(activeId)?.webContents.loadURL(normalize(url)));
+  ipcMain.handle('nav:go', (_, url) => { const u = normalize(url); if (u) return tabs.get(activeId)?.webContents.loadURL(u); });
   ipcMain.handle('nav:back', () => tabs.get(activeId)?.webContents.goBack());
   ipcMain.handle('nav:forward', () => tabs.get(activeId)?.webContents.goForward());
   ipcMain.handle('nav:reload', () => tabs.get(activeId)?.webContents.reload());
@@ -393,6 +388,27 @@ function setupIpc() {
     wc.setZoomLevel(d === 0 ? 0 : wc.getZoomLevel() + d); });
   ipcMain.handle('devtools', () => tabs.get(activeId)?.webContents.toggleDevTools());
   ipcMain.handle('perms:reset', () => { sitePerms = {}; store.save('perms', sitePerms); return true; });
+  // v1.4 Save as PDF. Normally shows a Save dialog; XER_TEST_PDF_DIR lets the automated tests save without a dialog.
+  ipcMain.handle('page:pdf', async () => {
+    const wc = tabs.get(activeId)?.webContents; if (!wc) return { ok: false, error: 'No active tab' };
+    const url = wc.getURL();
+    if (!pdfx.canPrint(url)) return { ok: false, error: 'This page cannot be saved as a PDF.' };
+    try {
+      const name = pdfx.safeName(wc.getTitle(), url);
+      let dest;
+      if (process.env.XER_TEST_PDF_DIR) dest = pdfx.uniquePath(process.env.XER_TEST_PDF_DIR, name, fsx.existsSync);
+      else {
+        const { dialog } = require('electron');
+        const r = await dialog.showSaveDialog(win, { title: 'Save page as PDF', defaultPath: pathx.join(app.getPath('downloads'), name), filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+        if (r.canceled || !r.filePath) return { ok: false, canceled: true };
+        dest = r.filePath.toLowerCase().endsWith('.pdf') ? r.filePath : r.filePath + '.pdf';
+      }
+      const buf = await wc.printToPDF(pdfx.pdfOptions());
+      if (!pdfx.looksLikePdf(buf)) return { ok: false, error: 'The page could not be converted to a PDF.' };
+      await fsx.promises.writeFile(dest, buf);
+      return { ok: true, path: dest, bytes: buf.length };
+    } catch (e) { return { ok: false, error: e.message }; }
+  });
   ipcMain.handle('reader:open', async () => {
     const wc = tabs.get(activeId)?.webContents; if (!wc) return { ok: false, error: 'No active tab' };
     try {
@@ -573,6 +589,7 @@ app.whenReady().then(() => {
       if (i.key === 'r') { tabs.get(activeId)?.webContents.reload(); e.preventDefault(); }
       if (i.key === 'd') { win.webContents.send('shortcut', 'bookmark'); e.preventDefault(); }
       if (i.key === 'f') { win.webContents.send('shortcut', 'find'); e.preventDefault(); }
+      if (i.key === 'p' && !i.shift) { win.webContents.send('shortcut', 'pdf'); e.preventDefault(); } // Ctrl+P
       if (i.key === 'h') { win.webContents.send('shortcut', 'history'); e.preventDefault(); }
       if (i.key === '=' || i.key === '+') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() + 0.5); e.preventDefault(); }
       if (i.key === '-') { tabs.get(activeId)?.webContents.setZoomLevel(tabs.get(activeId).webContents.getZoomLevel() - 0.5); e.preventDefault(); }
