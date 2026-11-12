@@ -355,6 +355,7 @@ $('gear').onclick = () => xer.openSettings();
 let toastT = null;
 function toast(msg) { const t = $('gameToast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 3500); }
 function paintGame(st) {
+  document.body.classList.toggle('lite', !!st.active); // Game Mode: drop costly blur effects so the GPU goes to the game
   $('gameBtn').classList.toggle('on', !!st.active);
   $('gameBtn').title = 'Game Mode: ' + (st.active ? 'ON' : 'off') + ' (Ctrl+Shift+G)';
 }

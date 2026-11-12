@@ -35,5 +35,9 @@ run urlinput  node test/urlinput.js
 run pdfexport node test/pdfexport.js
 run pdflive   node test/pdflive.js
 
+run contrast        node test/contrast.js
+run contrast-chrome node test/contrast-chrome.js
+run lite        node test/lite.js
+
 echo; [ $fail -eq 0 ] && echo "ALL $total SUITES PASSED" || echo "$fail of $total SUITES FAILED"
 exit $fail

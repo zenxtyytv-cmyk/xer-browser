@@ -8,7 +8,7 @@ function theme() {
   const t = S.theme, r = document.documentElement.style;
   r.setProperty('--accent', t.accent); r.setProperty('--bg', t.bg); r.setProperty('--card', t.card);
   r.setProperty('--text', t.text); r.setProperty('--radius', t.radius + 'px');
-  document.body.style.backgroundImage = /^https:\/\//.test(t.wallpaper || '') ? `url("${t.wallpaper.replace(/"/g, '%22')}")` : 'none';
+  document.body.style.backgroundImage = /^https:\/\//.test(t.wallpaper || '') ? `url("${t.wallpaper.replace(/"/g, '%22')}")` : 'url("assets/wallpaper.jpg")'; // no custom wallpaper => bundled Aurora swirl
   $('#cAccent').value = t.accent; $('#cBg').value = t.bg; $('#cCard').value = t.card; $('#cRad').value = t.radius; $('#cWall').value = t.wallpaper || '';
 }
 
@@ -87,4 +87,27 @@ function draw() {
   const bind = (id, key, num) => $(id).oninput = (e) => { S.theme[key] = num ? +e.target.value : e.target.value; theme(); save(); };
   bind('#cAccent', 'accent'); bind('#cBg', 'bg'); bind('#cCard', 'card'); bind('#cRad', 'radius', true); bind('#cWall', 'wallpaper');
   $('#resetBtn').onclick = async () => { if (confirm('Reset dashboard to defaults?')) { S = { ...(await window.xerInternal.dash.reset()), blocked: S.blocked, bookmarks: S.bookmarks }; theme(); draw(); } };
+})();
+
+
+// ---- floating dock (like the reference desktop): rounded glass bar of app shortcuts ----
+const DOCK = [
+  { t: 'Search',  u: 'https://duckduckgo.com',          c: '#c96d30', g: '\u{1F50D}' },
+  { t: 'Mail',    u: 'https://mail.proton.me',          c: '#6d4aff', g: '\u2709' },
+  { t: 'Maps',    u: 'https://www.openstreetmap.org',   c: '#2f985d', g: '\u{1F5FA}' },
+  { t: 'YouTube', u: 'https://www.youtube.com',         c: '#ff3b3b', g: '\u25B6' },
+  { t: 'Music',   u: 'https://soundcloud.com',          c: '#d86716', g: '\u266B' },
+  { t: 'GitHub',  u: 'https://github.com',              c: '#8b5cf6', g: '\u2699' },
+  { t: 'GeForce NOW', u: 'https://play.geforcenow.com', c: '#5d9200', g: '\u{1F3AE}' },
+  { t: 'Xbox Cloud',  u: 'https://www.xbox.com/play',   c: '#107c10', g: '\u{1F3AE}' },
+  { t: 'Wikipedia',   u: 'https://wikipedia.org',       c: '#418cb2', g: 'W' }
+];
+(function drawDock() {
+  const d = document.getElementById('dock'); if (!d) return;
+  DOCK.forEach(a => {
+    const el = document.createElement('a'); el.href = a.u; el.title = a.t; el.className = 'dk'; el.setAttribute('aria-label', a.t);
+    el.style.setProperty('--dc', a.c);
+    const i = document.createElement('span'); i.className = 'dki'; i.textContent = a.g;
+    el.append(i); d.append(el);
+  });
 })();

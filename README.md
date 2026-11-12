@@ -5,6 +5,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 ## Features
 - **Save as PDF** (Ctrl+P or the PDF button): save any web page or reader-mode page to a PDF, with backgrounds, page-title file names and no silent overwriting.
 - **Split view** (Ctrl+Shift+S): two tabs side by side with a draggable divider (double-click to reset), 50/50, 70/30 and 30/70 presets, and a swap button.
+- **Aurora look**: translucent plum glass chrome, pill tabs, a vivid swirl wallpaper and a floating app dock on the new tab page. Text contrast is measured by tests so it stays readable. Game Mode turns the blur off to save GPU.
 - **Game Mode** (Ctrl+Shift+G): cloud-gaming profile with uncapped frame rate, GPU decode, low latency, no background throttling, live FPS counter, and no permission pop-ups mid-game. See [Gaming](#gaming) for what it can and cannot do.
 - **Proxy / VPN manager** (Settings): route traffic through any SOCKS5/HTTP proxy, including VPN-provider proxy endpoints, Tor (`socks5://127.0.0.1:9050`), or a local WireGuard/OpenVPN SOCKS port. Xer does not run VPN servers itself.
 - **Customizable dashboard**: drag-free widget layout, resize, themes, wallpaper.

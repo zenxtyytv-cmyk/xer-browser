@@ -1,0 +1,57 @@
+/* Xer "Aurora" theme: glassy plum chrome over a vivid swirl wallpaper, rounded pill tabs, floating dock.
+   Pure styling layer: it never changes sizes the main process depends on (chrome stays 84px). */
+:root{
+  --glass: rgba(34, 16, 40, .62);
+  --glass-strong: rgba(30, 12, 38, .82);
+  --glass-line: rgba(255, 255, 255, .14);
+  --ink: #f6eefb;
+  --ink-dim: #cdb8dc;
+  --accent: #c76bff;
+  --accent-2: #5ec8ff;
+  --ok: #7cf0b0;
+}
+body{background:#1a0a24 url("assets/wallpaper.jpg") center/cover fixed;color:var(--ink)}
+
+/* ---- window chrome: tinted glass, like the reference title bar ---- */
+#chrome{background:linear-gradient(180deg, rgba(67,46,61,.92), rgba(45,24,39,.92));border-bottom:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%)}
+#tabbar{padding:0 10px}
+.tab{background:rgba(255,255,255,.07);color:var(--ink-dim);border-radius:10px 10px 0 0;transition:background .15s,color .15s}
+.tab:hover{background:rgba(255,255,255,.13);color:var(--ink)}
+.tab.active{background:linear-gradient(180deg, rgba(150,88,167,.55), rgba(106,36,152,.55));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+.tab.pinned{background:rgba(94,200,255,.12)}
+#newtab{border-radius:50%;width:26px;height:26px;padding:0;background:rgba(255,255,255,.10)}
+
+/* ---- toolbar ---- */
+button{background:rgba(255,255,255,.10);color:var(--ink);border-radius:9px;transition:background .15s,transform .05s}
+button:hover{background:rgba(255,255,255,.20)}
+button:active{transform:scale(.96)}
+#url{background:rgba(14,6,20,.55);border:1px solid var(--glass-line);color:var(--ink);border-radius:18px;padding:7px 16px}
+#url::placeholder{color:var(--ink-dim)}
+#url:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(199,107,255,.25)}
+#shield{color:var(--ok)}
+#claudeBtn{background:linear-gradient(135deg,#7a2fd6,#b0409e);color:#fff}
+#claudeBtn:hover{filter:brightness(1.12)}
+#gameBtn.on{background:#1f9f6a}
+#splitBtn.on{background:rgba(94,200,255,.35)}
+#dlBadge{background:var(--accent)}
+
+/* ---- panels, sidebar, menus: dark glass ---- */
+#sidebar,#panel{background:var(--glass-strong);border-color:var(--glass-line);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+#sbHead,#panelHead,#inputRow,#quick{border-color:var(--glass-line)}
+#suggest,#tabmenu,#findbar,#gameToast{background:var(--glass-strong);border:1px solid var(--glass-line);border-radius:14px;
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.sug.sel,.sug:hover{background:rgba(255,255,255,.12)}
+#tabmenu button:hover{background:rgba(255,255,255,.14)}
+.sug b{color:var(--accent);background:rgba(255,255,255,.10)}
+.item{border-color:var(--glass-line)}.item:hover{background:rgba(255,255,255,.08)}
+#keyBox input,#prompt,#findInput,#tabmenu .gname{background:rgba(14,6,20,.55);border-color:var(--glass-line);color:var(--ink)}
+.m.ai{background:rgba(255,255,255,.09)}
+.m.user{background:linear-gradient(135deg,#7a2fd6,#a83a96)}
+.bar{background:rgba(255,255,255,.12)}.bar i{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.tab.drop-before{box-shadow:inset 3px 0 0 var(--accent-2)}.tab.drop-after{box-shadow:inset -3px 0 0 var(--accent-2)}
+#splitDivider:hover,#splitDivider.drag{background:var(--accent)}
+
+/* reduced-motion and low-power friendliness: glass blur is the costly part, so it can be switched off */
+body.lite *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }

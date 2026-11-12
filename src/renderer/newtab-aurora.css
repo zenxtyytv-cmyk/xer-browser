@@ -1,0 +1,36 @@
+/* Aurora theme for the new-tab page: glass widgets over the swirl wallpaper + floating dock */
+:root{--accent:#c76bff;--card:rgba(34,16,40,.55);--text:#f6eefb;--bg:#1a0a24}
+body{background-color:#1a0a24;background-size:cover;background-position:center;background-attachment:fixed;color:var(--text)}
+.w,#addbar{background:rgba(26,10,34,.78);border:1px solid rgba(255,255,255,.14);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+button{background:rgba(255,255,255,.14);color:var(--text);border:1px solid rgba(255,255,255,.10)}
+button:hover{background:var(--accent)}
+input,textarea{background:rgba(14,6,20,.55);color:var(--text);border:1px solid rgba(255,255,255,.14)}
+.links a{background:rgba(255,255,255,.12)}.links a:hover{background:var(--accent)}
+.logo{background:linear-gradient(90deg,#ffb36b,#e060c8,#5ec8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.big{color:#ffd9a8}
+.w h4{opacity:.8}
+#grid{padding-bottom:120px} /* room so the dock never covers a widget */
+
+/* floating, rounded, translucent dock */
+#dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:10px;align-items:center;
+  padding:9px 14px;border-radius:22px;background:rgba(240,235,250,.20);border:1px solid rgba(255,255,255,.35);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:0 14px 40px rgba(20,0,40,.45), inset 0 1px 0 rgba(255,255,255,.35);z-index:10;max-width:calc(100vw - 24px);overflow:visible}
+#dock .dk{position:relative;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;text-decoration:none;flex:none;
+  background:linear-gradient(145deg, color-mix(in srgb,var(--dc) 92%,white 8%), color-mix(in srgb,var(--dc) 70%,black 30%));
+  box-shadow:0 4px 10px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.4);transition:transform .14s cubic-bezier(.3,1.6,.5,1)}
+#dock .dk:hover,#dock .dk:focus-visible{transform:translateY(-8px) scale(1.18);outline:none}
+#dock .dki{font-size:20px;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);font-weight:700}
+#dock .dk::after{content:attr(title);position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:rgba(20,8,28,.9);color:#fff;font-size:11px;padding:3px 8px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .12s}
+#dock .dk:hover::after,#dock .dk:focus-visible::after{opacity:1}
+@media (max-width:620px){#dock{gap:6px;padding:7px 9px}#dock .dk{width:34px;height:34px}#dock .dki{font-size:16px}}
+@media (prefers-reduced-motion: reduce){#dock .dk{transition:none}}
+
+/* the top bar sits directly on the wallpaper, so give its buttons a solid-enough surface */
+#bar button{background:rgba(26,10,34,.70)}
+#bar button:hover{background:var(--accent)}
+.w{color:#fff}
+.w h4{color:#ead9f5;opacity:.9}
+.clock .date{color:#e2cdef;opacity:1}

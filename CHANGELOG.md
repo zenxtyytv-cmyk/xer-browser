@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0
+- **Aurora look**: a new default theme inspired by modern desktop styling. Translucent plum "glass" tab strip and toolbar, rounded pill tabs, a glass address bar, and a vivid purple, magenta, orange and cyan swirl wallpaper behind the new tab page.
+- **Floating dock** on the new tab page: a rounded, translucent bar of app shortcuts (Search, Mail, Maps, YouTube, Music, GitHub, GeForce NOW, Xbox Cloud, Wikipedia) that lifts and magnifies on hover.
+- **Still readable**: widget cards are darker glass so text stays clear over the wallpaper. Contrast is now measured on real rendered pixels (13 text elements and 9 dock icons on the new tab, 21 elements in the browser chrome), and tests fail if any text drops below 4.5:1 or any dock icon below 3:1. That check caught and fixed a washed-out Claude button and several low-contrast dock tiles.
+- **Game Mode drops the blur**: the glass blur costs GPU time, so Game Mode switches it off and restores it afterwards.
+- Your own wallpaper and colors in the Customize bar still win; the Aurora wallpaper is only the fallback when none is set.
+- Styling lives in theme.css and newtab-aurora.css, separate from the layout rules, so no sizes the app depends on changed.
+
 ## 1.4.0
 - **Save page as PDF** (Ctrl+P or the PDF toolbar button): saves the current page to a PDF through a Save dialog that starts in your Downloads folder with a file name taken from the page title. Backgrounds are included, long pages split across pages, and reader-mode pages can be saved too. Existing files are never overwritten (a second save becomes `name (1).pdf`). Internal pages such as the new-tab page are refused with a short message. Uses Electron's built-in PDF printing, so there is no new dependency.
 - **Address bar fixes** (now in `urlinput.js`, with tests):
