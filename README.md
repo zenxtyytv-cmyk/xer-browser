@@ -3,6 +3,7 @@
 A privacy-first browser built on the Chromium engine (via Electron), with Claude as the built-in assistant.
 
 ## Features
+- **Clear browsing data** (Settings): wipe history, cookies and site data, cache, saved permissions and the downloads list, by time range. Proxy passwords are encrypted with the OS keychain.
 - **Save as PDF** (Ctrl+P or the PDF button): save any web page or reader-mode page to a PDF, with backgrounds, page-title file names and no silent overwriting.
 - **Split view** (Ctrl+Shift+S): two tabs side by side with a draggable divider (double-click to reset), 50/50, 70/30 and 30/70 presets, and a swap button.
 - **Aurora look**: translucent plum glass chrome, pill tabs, a vivid swirl wallpaper and a floating app dock on the new tab page. Text contrast is measured by tests so it stays readable. Game Mode turns the blur off to save GPU.
@@ -87,7 +88,7 @@ What it cannot do: the frame rate of a cloud-gaming stream is decided by the clo
 ## Roadmap
 Chrome Web Store installer for extensions, broader extension API coverage.
 
-Done: extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode, extension support, Save as PDF.
+Done: extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode, extension support, Save as PDF, clear browsing data, working DNS-over-HTTPS toggle.
 
 ## Extensions
 Open Settings > Extensions > **Add extension from folder** and choose an unpacked Chrome extension (the folder with `manifest.json`, Manifest V2 or V3). Xer lists its sensitive permissions and asks before loading it. Extensions can be disabled or removed at any time and reload on launch. Built on Electron's extension support, so some Chrome APIs are unavailable, and only add extensions you trust.
@@ -115,6 +116,8 @@ xvfb-run -a npx electron test/extlive.js --no-sandbox --disable-gpu
 node test/urlinput.js
 node test/pdfexport.js
 xvfb-run -a node test/pdflive.js
+node test/cleardata.js
+xvfb-run -a node test/cleardatalive.js
 ```
 
 ## Shortcuts

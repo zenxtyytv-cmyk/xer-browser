@@ -7,6 +7,7 @@ if (location.protocol === 'file:') {
     dash: { get: inv('dash:get'), set: inv('dash:set'), reset: inv('dash:reset') },
     game: { get: inv('game:get'), set: inv('game:set'), restart: inv('game:restart') },
     ext: { list: inv('ext:list'), add: inv('ext:add'), toggle: inv('ext:toggle'), remove: inv('ext:remove') },
+    data: { clear: inv('data:clear') },
     ai: { get: inv('ai:get'), set: inv('ai:set'), models: inv('ai:models') }
   });
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0
+- **Clear browsing data** (Settings > Clear browsing data): choose any mix of browsing history, cookies and site data, cached files, saved site permissions and the finished-downloads list, over the last hour, 24 hours, 7 days or all time. Time ranges apply to history and the downloads list; the engine cannot clear cookies and site data by time, so those are always cleared completely (the page says so). Running downloads are never removed. Files you downloaded stay on disk.
+- **Fix: the "Encrypted DNS (DNS-over-HTTPS)" switch did nothing.** The setting was saved but never applied. It now configures Chromium's secure DNS (automatic mode with your DoH server, falling back to normal DNS if it is unreachable) at launch and when toggled.
+- **Security: proxy passwords** were stored in plain text in `network.json` and sent to the Settings page on every status call. They are now encrypted with the OS keychain (existing plain-text passwords are migrated on first launch) and never leave the main process; the UI only learns that a password exists. Where the OS keychain is unavailable the old behaviour remains.
+- **Security: AI settings** accepted any keys and any URL. Only the provider, model and an http(s) Ollama address are accepted now.
+- New tests: 21 unit checks (planning, time ranges, settings sanitizing) and 12 live checks that clear real data in the running app and verify the proxy password is hidden and encrypted.
+
 ## 1.5.0
 - **Aurora look**: a new default theme inspired by modern desktop styling. Translucent plum "glass" tab strip and toolbar, rounded pill tabs, a glass address bar, and a vivid purple, magenta, orange and cyan swirl wallpaper behind the new tab page.
 - **Floating dock** on the new tab page: a rounded, translucent bar of app shortcuts (Search, Mail, Maps, YouTube, Music, GitHub, GeForce NOW, Xbox Cloud, Wikipedia) that lifts and magnifies on hover.

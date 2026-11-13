@@ -22,6 +22,16 @@ select,input{width:100%;margin:4px 0 8px}.row{display:flex;gap:8px;align-items:c
 <label><input type="checkbox" id="doh" style="width:auto"> Encrypted DNS (DNS-over-HTTPS)</label>
 <small>Ad and tracker blocking is always on (Ghostery engine with EasyList and EasyPrivacy).</small></section>
 
+<section class="w"><h4>Clear browsing data</h4>
+<small>Wipe what Xer has stored on this device. Cookies and site data are always cleared completely (the engine cannot clear them by time).</small>
+<label><input type="checkbox" class="cd" value="history" checked style="width:auto"> Browsing history</label>
+<label><input type="checkbox" class="cd" value="cookies" checked style="width:auto"> Cookies and site data (you will be signed out of sites)</label>
+<label><input type="checkbox" class="cd" value="cache" checked style="width:auto"> Cached images and files</label>
+<label><input type="checkbox" class="cd" value="permissions" style="width:auto"> Saved site permissions</label>
+<label><input type="checkbox" class="cd" value="downloads" style="width:auto"> Finished downloads list (files stay on disk)</label>
+<div class="row"><select id="cd_range"><option value="hour">Last hour</option><option value="day">Last 24 hours</option><option value="week">Last 7 days</option><option value="all" selected>All time</option></select><button id="cd_go">Clear data</button></div>
+<div id="cd_msg"></div></section>
+
 <section class="w"><h4>Extensions</h4>
 <small>Load unpacked Chrome extensions (Manifest V2 or V3). Click Add, pick the folder that contains manifest.json, and review the permissions before confirming. Only add extensions you trust: they can see the pages they have access to. Not every Chrome extension API is supported by Electron.</small>
 <div id="extlist"></div>

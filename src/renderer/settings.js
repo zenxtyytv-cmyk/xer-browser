@@ -72,3 +72,10 @@ $('#extadd').onclick = async () => {
   drawExt();
 };
 drawExt();
+
+// ---- Clear browsing data ----
+$('#cd_go').onclick = async () => {
+  const kinds = [...document.querySelectorAll('.cd:checked')].map(i => i.value), msg = $('#cd_msg');
+  try { const r = await X.data.clear({ kinds, range: $('#cd_range').value }); msg.className = 'ok'; msg.textContent = 'Cleared: ' + r.cleared.join(', '); }
+  catch (x) { msg.className = 'bad'; msg.textContent = x.message.replace(/^Error invoking remote method '[^']+': Error: /, ''); }
+};

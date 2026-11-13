@@ -57,9 +57,14 @@ function attach(ses, onPush, onPersist) {
 function hydrate(saved) { if (Array.isArray(saved)) items = saved.filter(x => x && x.id); }
 function list() { return items; }
 function clear() { items = []; persist(items); push(items); }
+// Drops finished entries (not running downloads). since > 0 keeps entries started before it.
+function clearFinished(since = 0) {
+  items = items.filter(x => x.state === 'progressing' || (since && !(Number(x.started) >= since)));
+  persist(items); push(items);
+}
 function find(id) { return items.find(x => x.id === id); }
 function openFile(id) { const r = find(id); if (!r || r.state !== 'completed') return false; shell.openPath(r.path); return true; }
 function showInFolder(id) { const r = find(id); if (!r || r.state !== 'completed') return false; shell.showItemInFolder(r.path); return true; }
 function cancel(id) { const it = live.get(id); if (!it) return false; it.cancel(); return true; }
 
-module.exports = { attach, hydrate, list, clear, openFile, showInFolder, cancel };
+module.exports = { attach, hydrate, list, clear, clearFinished, openFile, showInFolder, cancel };

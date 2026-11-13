@@ -3,6 +3,7 @@ const path = require('path');
 const { isBlocked } = require('./blocklist');
 const claude = require('./claude');
 const store = require('./store');
+const cleardata = require('./cleardata');
 const gaming = require('./gaming');
 const { suggest: suggestRank } = require('./suggest');
 const network = require('./network');
@@ -443,6 +444,18 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
     } catch { return false; }
   };
   const guard = (fn) => (e, ...a) => { if (!internal(e)) throw new Error('forbidden'); return fn(...a); };
+  ipcMain.handle('data:clear', guard(async (req) => {
+    const p = cleardata.plan(req), ses = session.fromPartition('persist:xer'), done = [];
+    for (const k of p.kinds) {
+      if (k === 'history') { history = cleardata.keepOlder(history, p.since, 't'); store.save('history', history); }
+      else if (k === 'cookies') await ses.clearStorageData({ storages: cleardata.COOKIE_STORAGES }); // Electron cannot range-clear site data: always everything
+      else if (k === 'cache') { await ses.clearCache(); await ses.clearCodeCaches({}); }
+      else if (k === 'permissions') { sitePerms = {}; store.save('perms', sitePerms); }
+      else if (k === 'downloads') downloads.clearFinished(p.since);
+      done.push(k);
+    }
+    return { ok: true, cleared: done, range: p.range };
+  }));
   // ---- Gaming / Game Mode ----
   const gamingFile = () => path.join(app.getPath('userData'), 'gaming.json');
   const overlayOn = new Set(); // tab ids with the FPS overlay running
