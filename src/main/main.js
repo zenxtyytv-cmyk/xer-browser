@@ -548,14 +548,17 @@ blockquote{border-left:3px solid #34344d;margin:24px 0;padding-left:16px;color:#
   ipcMain.handle('open:settings', () => newTab('file://' + path.join(__dirname, '../renderer/settings.html')));
   ipcMain.handle('claude:hasKey', () => claude.hasKey());
   ipcMain.handle('claude:setKey', (_, k) => { try { claude.saveKey(String(k || '').trim()); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; } });
-  ipcMain.handle('claude:ask', async (_, { messages, withPage, allowActions }) => {
+  ipcMain.handle('claude:ask', async (e, { messages, withPage, allowActions, streamId }) => {
     try {
       const pc = withPage ? await pageContext() : null;
       const add = allowActions && pc ? actions.SYSTEM_ADDENDUM : '';
       let text;
       if (localai.get().provider === 'local') {
         const system = 'You are the assistant of Xer Browser. Be concise.' + (pc ? `\n\nPage: ${pc.title} (${pc.url})\n${pc.text}` : '') + add;
-        text = await localai.ask({ messages, system });
+        // Stream tokens to the sidebar unless actions are on (the action block must be parsed whole).
+        const sid = typeof streamId === 'string' ? streamId.slice(0, 40) : '';
+        const onToken = sid && !add ? (t) => { try { e.sender.send('ai:chunk', { id: sid, text: t }); } catch {} } : undefined;
+        text = await localai.ask({ messages, system, onToken });
       } else {
         text = await claude.ask({ messages, pageContext: pc, extraSystem: add });
       }

@@ -189,13 +189,20 @@ function add(cls, text) {
   const d = document.createElement('div'); d.className = 'm ' + cls; d.textContent = text;
   $('msgs').append(d); $('msgs').scrollTop = 1e9; return d;
 }
+const streams = {};
+xer.on('ai:chunk', (d) => { if (d && streams[d.id]) streams[d.id](String(d.text)); });
 async function send() {
   const text = $('prompt').value.trim(); if (!text) return;
   $('prompt').value = ''; add('user', text);
   history.push({ role: 'user', content: text });
   const wait = add('ai', '...');
   const allow = $('allowAct').checked; if (allow) $('withPage').checked = true;
-  const r = await xer.ask({ messages: history, withPage: $('withPage').checked, allowActions: allow });
+  // Local (Ollama) replies stream in token by token; the bubble is filled by 'ai:chunk' events.
+  const sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  let streamed = false;
+  streams[sid] = (t) => { if (!streamed) { streamed = true; wait.textContent = ''; } wait.textContent += t; $('msgs').scrollTop = 1e9; };
+  const r = await xer.ask({ messages: history, withPage: $('withPage').checked, allowActions: allow, streamId: sid });
+  delete streams[sid];
   wait.remove();
   if (r.ok) { add('ai', r.text); history.push({ role: 'assistant', content: r.text }); if (r.actions && r.actions.length) actionCard(r.actions, r.tabId, r.pageUrl); }
   else { add('err', r.error); history.pop(); }

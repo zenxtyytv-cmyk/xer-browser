@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0
+- **Streaming local AI replies**: with the Local model (Ollama) provider, the answer now appears in the Claude sidebar word by word while the model writes it, instead of after a long silent wait. Streaming uses Ollama's built-in `/api/chat` streaming (no new dependency). When "actions" is ticked the reply is still shown whole, because the action block has to be read in full before anything is proposed.
+- **Fix: a stuck Ollama froze the sidebar forever.** Local requests had no time limit. Now Xer gives up after 8 seconds if Ollama does not answer and after 60 seconds of silence mid-reply, with a clear message ("Cannot reach Ollama at ...", "Ollama stopped responding.").
+- **Fix: the local path sent the whole chat history.** Claude already kept only the last 20 turns; the local model now does too, and malformed turns are dropped.
+- **Fix: Ollama HTTP errors were misreported.** The model list treated an error page as "no models", and server messages such as "model not found" now reach you.
+- New test `test/localai.js`: 17 checks covering the stream parser (lines split anywhere), history trimming, and a fake Ollama server for streaming, errors, unreachable and no-model cases.
+
 ## 1.6.0
 - **Clear browsing data** (Settings > Clear browsing data): choose any mix of browsing history, cookies and site data, cached files, saved site permissions and the finished-downloads list, over the last hour, 24 hours, 7 days or all time. Time ranges apply to history and the downloads list; the engine cannot clear cookies and site data by time, so those are always cleared completely (the page says so). Running downloads are never removed. Files you downloaded stay on disk.
 - **Fix: the "Encrypted DNS (DNS-over-HTTPS)" switch did nothing.** The setting was saved but never applied. It now configures Chromium's secure DNS (automatic mode with your DoH server, falling back to normal DNS if it is unreachable) at launch and when toggled.
