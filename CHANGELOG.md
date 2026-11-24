@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0
+- **Page context menu** (right-click on any web page): Back / Forward / Reload and Inspect element, like Firefox and Chrome.
+  - On a link: **Open link in new tab** (lands next to the current tab and joins its tab group, like a clicked link) and **Copy link address**. Non-web links such as `javascript:` or `mailto:` are never offered.
+  - On selected text: **Copy** and **Search DuckDuckGo for "…"** (long selections are shortened in the label but searched in full; the search opens in a new tab).
+  - On an image: **Copy image address**. In a text field: Cut / Copy / Paste / Select all.
+- Menu contents are decided in a new pure module `src/main/contextmenu.js`; `main.js` only wires the item ids to actions on the tab. New test `test/contextmenu.js` (20 checks).
+
 ## 1.7.0
 - **Streaming local AI replies**: with the Local model (Ollama) provider, the answer now appears in the Claude sidebar word by word while the model writes it, instead of after a long silent wait. Streaming uses Ollama's built-in `/api/chat` streaming (no new dependency). When "actions" is ticked the reply is still shown whole, because the action block has to be read in full before anything is proposed.
 - **Fix: a stuck Ollama froze the sidebar forever.** Local requests had no time limit. Now Xer gives up after 8 seconds if Ollama does not answer and after 60 seconds of silence mid-reply, with a clear message ("Cannot reach Ollama at ...", "Ollama stopped responding.").
@@ -124,7 +131,7 @@
 - Local AI provider via Ollama (run any model you pull yourself) as an alternative to Claude.
 - Customizable dashboard: widgets (clock, search, quick links, notes, to-do, privacy stats, bookmarks, pomodoro, calculator), reorder/resize/remove, theme colors, corner radius, wallpaper.
 - Settings page. Safe calculator parser (no eval).
-- Internal-page API is only exposed to our bundled pages (exact path check), never to websites. Verified by test/security.js.
+- Internal-page API is only exposed to our bundled pages (exact file:// path check), never to websites. Verified by test/security.js.
 - New feature tests, including a real proxy-routing test.
 
 ## 0.3.0
