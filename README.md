@@ -15,6 +15,7 @@ A privacy-first browser built on the Chromium engine (via Electron), with Claude
 - **Drag-and-drop tabs**: drag a tab to reorder it. Drop on the left half of another tab to go before it, the right half to go after. Dropping onto a pinned tab pins it; dropping next to a grouped tab joins the group. Your order is remembered between launches.
 - **Tab groups**: right-click a tab > *Add to new group*, then right-click the colored group chip to rename, recolor (8 colors), collapse/expand, ungroup or close the whole group. Group tabs stay side by side, links opened from a grouped tab join its group, pinned tabs can't be grouped, and groups (name, color, collapsed state) come back after a restart.
 - **Reopen closed tab** (Ctrl+Shift+T): a 25-deep memory of closed web tabs.
+- **Page context menu**: right-click any web page for Back / Forward / Reload / Inspect element; right-click a link to open it in a new tab or copy its address; right-click selected text to copy it or search DuckDuckGo for it; text fields get Cut / Copy / Paste / Select all.
 - **Session restore**: your open web tabs come back on the next launch.
 - **Downloads manager** (Ctrl+Shift+J or the ⬇ toolbar button): live progress, cancel, Open / Show in folder, clear finished, persists across restarts.
 - **Awesomebar suggestions**: as you type in the address bar, Xer suggests matches from your local history and bookmarks. Computed on-device; nothing is uploaded.
@@ -88,7 +89,7 @@ What it cannot do: the frame rate of a cloud-gaming stream is decided by the clo
 ## Roadmap
 Chrome Web Store installer for extensions, broader extension API coverage.
 
-Done: streaming local AI replies, extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode, extension support, Save as PDF, clear browsing data, working DNS-over-HTTPS toggle.
+Done: streaming local AI replies, extension support (unpacked Chrome extensions), tabs, pinned tabs, session restore, reopen closed tab, address-bar suggestions, ad blocking (Ghostery engine + EasyList), bookmarks, history, per-site permission prompts, find-in-page, zoom, reader mode, Claude quick actions, settings page, proxy/VPN manager, local AI (Ollama), dashboard, downloads manager, Claude page actions with approval, tab groups, drag-and-drop tab reordering, Game Mode, split view, draggable split divider, multi-step action plans, sanitized reader mode, extension support, Save as PDF, clear browsing data, working DNS-over-HTTPS toggle, page context menu.
 
 ## Extensions
 Open Settings > Extensions > **Add extension from folder** and choose an unpacked Chrome extension (the folder with `manifest.json`, Manifest V2 or V3). Xer lists its sensitive permissions and asks before loading it. Extensions can be disabled or removed at any time and reload on launch. Built on Electron's extension support, so some Chrome APIs are unavailable, and only add extensions you trust.
@@ -118,10 +119,11 @@ node test/pdfexport.js
 xvfb-run -a node test/pdflive.js
 node test/cleardata.js
 xvfb-run -a node test/cleardatalive.js
+node test/contextmenu.js
 ```
 
 ## Shortcuts
-Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+P save as PDF, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+S split view, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Drag tabs to reorder. Drag the divider between split panes to resize.
+Ctrl+T new tab, Ctrl+W close, Ctrl+Shift+T reopen closed tab, Ctrl+Tab next tab, Ctrl+L address bar, Ctrl+R reload, Ctrl+D bookmark, Ctrl+F find, Ctrl+P save as PDF, Ctrl+H history, Ctrl+J Claude, Ctrl+Shift+J downloads, Ctrl+Shift+G Game Mode, Ctrl+Shift+S split view, Ctrl+Shift+P pin/unpin, Ctrl +/-/0 zoom, F12 devtools. Right-click a tab for pin / reload / duplicate / close. Right-click a page for navigation, link, selection and image actions. Drag tabs to reorder. Drag the divider between split panes to resize.
 
 ## Open-source credits
 - [Electron](https://github.com/electron/electron) (MIT) and Chromium (BSD)

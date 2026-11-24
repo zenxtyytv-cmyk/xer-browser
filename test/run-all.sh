@@ -37,6 +37,7 @@ run pdflive   node test/pdflive.js
 run cleardata node test/cleardata.js
 run cleardatalive node test/cleardatalive.js
 run localai   node test/localai.js
+run contextmenu node test/contextmenu.js
 
 run contrast        node test/contrast.js
 run contrast-chrome node test/contrast-chrome.js

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, BrowserView, ipcMain, session, Menu, shell } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, session, Menu, shell, clipboard } = require('electron');
 const path = require('path');
 const { isBlocked } = require('./blocklist');
 const claude = require('./claude');
@@ -102,8 +102,9 @@ function pushTabs() {
   });
 }
 
-const normalize = require('./urlinput').normalize;
+const { normalize, SEARCH } = require('./urlinput');
 const pdfx = require('./pdfexport');
+const ctxmenu = require('./contextmenu');
 
 function newTab(url, opts = {}) {
   const id = nextId++;
@@ -120,6 +121,31 @@ function newTab(url, opts = {}) {
   // v0.5: favicon capture
   wc.on('page-favicon-updated', (_, urls) => {
     if (urls && urls.length) { favicons.set(id, urls[0]); pushTabs(); }
+  });
+  // v1.8: page context menu (right-click). Which items appear is decided in contextmenu.js (pure, tested);
+  // here we only wire the item ids to actions on this tab.
+  wc.on('context-menu', (_, params) => {
+    const items = ctxmenu.build({ linkURL: params.linkURL, srcURL: params.srcURL, mediaType: params.mediaType,
+      selectionText: params.selectionText, isEditable: params.isEditable, canBack: wc.canGoBack(), canFwd: wc.canGoForward() });
+    // Links opened from the menu land next to this tab and join its group, like window.open does.
+    const openLink = (u) => { const nid = newTab(u, { after: id }); const g = groups.groupOf(id); if (g != null) { groups.assign(nid, g); pushTabs(); } };
+    const run = {
+      'open-link': (it) => openLink(it.link),
+      'copy-link': (it) => clipboard.writeText(it.link),
+      'copy-image': (it) => clipboard.writeText(it.link),
+      copy: () => wc.copy(),
+      cut: () => wc.cut(),
+      paste: () => wc.paste(),
+      'select-all': () => wc.selectAll(),
+      search: (it) => openLink(SEARCH + encodeURIComponent(it.query)),
+      back: () => { if (wc.canGoBack()) wc.goBack(); },
+      forward: () => { if (wc.canGoForward()) wc.goForward(); },
+      reload: () => wc.reload(),
+      inspect: () => wc.inspectElement(params.x, params.y),
+    };
+    const tmpl = items.map(it => it.type === 'separator' ? { type: 'separator' }
+      : { label: it.label, enabled: it.enabled !== false, click: () => { try { run[it.id] && run[it.id](it); } catch {} } });
+    Menu.buildFromTemplate(tmpl).popup({ window: win });
   });
   // Auto-upgrade http -> https
   wc.on('did-finish-load', () => { if (gameMode && !gameCfg.hideOverlayDefault && id === activeId && /^https?:/.test(wc.getURL())) { wc.executeJavaScript(gaming.overlayScript()).catch(() => {}); } });
